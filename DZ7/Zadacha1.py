@@ -9,6 +9,7 @@ import numpy as np
 
 
 class Gas:
+
     def __init__(self,
                 CH4 = 0,
                 C2H6 = 0,
@@ -130,6 +131,8 @@ class Gas:
     def relative_enthalpy(self):
         return self.enthalpy_of_pure_combustion_products + (self.alpha - 1) / self.enthalpy_air
 
+    #PV=RT вопрос что надо выводить а что у нас евляется переменными на входе.
+    #Вопрос что надо сделать в 4 пункте?
 
 a = Gas(90.48,2.07,0.99,1.75,0.61,3.45,0.65,temperature=373.15 )        #Астраханское месторождение
 print(a.heat_of_combustion)
