@@ -4,8 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>52e8cf23-a2b8-4f85-9b48-00f7b7bcc2ff</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>
-    </StartupFile>
+    <StartupFile>DZ7\модуль3.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +21,9 @@
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'f' ">
+    <OutputPath>bin\f\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="DZ1\Задача 1.py" />
     <Compile Include="DZ1\Задача 2.py" />
@@ -29,6 +31,20 @@
     <Compile Include="Dz2\Задача 1.py" />
     <Compile Include="Dz2\Задача 2.py" />
     <Compile Include="Dz3\Задача 1.py" />
+    <Compile Include="Dz4\Задача 1.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Dz5\Задача 1.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DZ7\module222.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DZ7\Zadacha1.py" />
+    <Compile Include="DZ7\condition.yaml" />
+    <Compile Include="DZ7\класс1.py" />
+    <Compile Include="DZ7\модуль2.py" />
+    <Compile Include="DZ7\модуль3.py" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="venw\">
@@ -46,6 +62,8 @@
     <Folder Include="Dz2\" />
     <Folder Include="Dz3\" />
     <Folder Include="Dz4\" />
+    <Folder Include="Dz5\" />
+    <Folder Include="DZ7\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
