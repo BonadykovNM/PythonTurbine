@@ -1,0 +1,240 @@
+﻿Уренгойский:
+    organic:
+        CH4:
+            percent: 98.40
+            order: 1
+        C2H6:
+            percent: 0.10
+            order: 2
+        C3H8:
+            percent: 0
+            order: 3
+        C4H10:
+            percent: 0
+            order: 4
+        C5H12:
+            percent: 0
+            order: 5
+
+    N2: 1.2
+    CO2: 0.3
+    O2: 0
+    C0: 0
+    H2: 0
+
+Ямурское:
+    organic:
+        CH4:
+            percent: 98.6
+            order: 1
+        C2H6:
+            percent: 0.10
+            order: 2
+        C3H8:
+            percent: 0
+            order: 3
+        C4H10:
+            percent: 0
+            order: 4
+        C5H12:
+            percent: 0
+            order: 5
+
+    N2: 1.2
+    CO2: 0.1
+    O2: 0
+    C0: 0
+    H2: 0
+
+Заполярное:
+    organic:
+        CH4:
+            percent: 99.30
+            order: 1
+        C2H6:
+            percent: 0.10
+            order: 2
+        C3H8:
+            percent: 0
+            order: 3
+        C4H10:
+            percent: 0
+            order: 4
+        C5H12:
+            percent: 0
+            order: 5
+
+    N2: 0.4
+    CO2: 0.2
+    O2: 0
+    C0: 0
+    H2: 0
+
+Медвежье:
+    organic:
+        CH4:
+            percent: 97.30
+            order: 1
+        C2H6:
+            percent: 1
+            order: 2
+        C3H8:
+            percent: 0.1
+            order: 3
+        C4H10:
+            percent: 0.1
+            order: 4
+        C5H12:
+            percent: 0.1
+            order: 5
+
+    N2: 0.5
+    CO2: 0.5
+    O2: 0
+    C0: 0
+    H2: 0
+
+Оренбургское:
+    organic:
+        CH4:
+            percent: 83.77
+            order: 1
+        C2H6:
+            percent: 4.6
+            order: 2
+        C3H8:
+            percent: 1.64
+            order: 3
+        C4H10:
+            percent: 0.81
+            order: 4
+        C5H12:
+            percent: 1.88
+            order: 5
+
+    N2: 4.34
+    CO2: 0.87
+    O2: 0
+    C0: 0
+    H2: 1.49
+
+Вуктыльское:
+    organic:
+        CH4:
+            percent: 75.10
+            order: 1
+        C2H6:
+            percent: 8.90
+            order: 2
+        C3H8:
+            percent: 3.60
+            order: 3
+        C4H10:
+            percent: 1.5
+            order: 4
+        C5H12:
+            percent: 6.4
+            order: 5
+
+    N2: 4.4
+    CO2: 0.1
+    O2: 0
+    C0: 0
+    H2: 0
+
+Шебелинское:
+    organic:
+        CH4:
+            percent: 92.07
+            order: 1
+        C2H6:
+            percent: 3.26
+            order: 2
+        C3H8:
+            percent: 0.59
+            order: 3
+        C4H10:
+            percent: 0.18
+            order: 4
+        C5H12:
+            percent: 0.6
+            order: 5
+
+    N2: 1.3
+    CO2: 2
+    O2: 0
+    C0: 0
+    H2: 0
+
+Газлинское:
+    organic:
+        CH4:
+            percent: 96.90
+            order: 1
+        C2H6:
+            percent: 1.74
+            order: 2
+        C3H8:
+            percent: 0.04
+            order: 3
+        C4H10:
+            percent: 0.01
+            order: 4
+        C5H12:
+            percent: 0.1
+            order: 5
+
+    N2: 1.15
+    CO2: 0.15
+    O2: 0
+    C0: 0
+    H2: 0
+
+Астраханское:
+    organic:
+        CH4:
+            percent: 90.48
+            order: 1
+        C2H6:
+            percent: 2.07
+            order: 2
+        C3H8:
+            percent: 0.99
+            order: 3
+        C4H10:
+            percent: 1.75
+            order: 4
+        C5H12:
+            percent: 0.61
+            order: 5
+
+    N2: 3.45
+    CO2: 0.65
+    O2: 0
+    C0: 0
+    H2: 0
+    
+Иное месторождение:
+    organic:
+        CH4:
+            percent: 96.40
+            order: 1
+        C2H6:
+            percent: 1.10
+            order: 2
+        C3H8:
+            percent: 1
+            order: 3
+        C4H10:
+            percent: 0
+            order: 4
+        C5H12:
+            percent: 0
+            order: 5
+
+    N2: 1.2
+    CO2: 0.3
+    O2: 0
+    C0: 0
+    H2: 0 
+ 
