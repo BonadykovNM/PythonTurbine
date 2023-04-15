@@ -113,7 +113,8 @@ def coeff (pk, p_feed_water, t_feed_water, internal_efficiency, p_middle, t_midd
         point_water = find_point_water(pk, p_feed_water, t_feed_water)
         point2 = find_point2(p_middle, t_middle, p0, pk, internal_efficiency)
         coeff = (( point_water[1].T -  point2[1].T) / (to_kelvin(374.2) -  point2[1].T))
-        cf = 0.9  
+        print("Коэфициент для нахождения коэфициента", coeff)
+        cf = float(input("Коэфициент с графика" ))
         return cf
 
 def complite_ksi_infinity(p0,
