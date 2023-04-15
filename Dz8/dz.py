@@ -54,14 +54,23 @@ for value in T_c:
         phi[value].append(find_phi(valueps, m, value, T_a))
 
 efficiency = dict({})
-work_coeff = dict({})
 for value in T_c:
     efficiency[value] = []
+    for valueps in eps:
+        a = complite_kpd(valueps, m, value, T_a, turbine_efficiency, compressor_efficiency)
+        if a[0]>=0:
+            efficiency[value].append(a[0])
+        else:
+            break
+work_coeff = dict({})
+for value in T_c:
     work_coeff[value] = []
     for valueps in eps:
         a = complite_kpd(valueps, m, value, T_a, turbine_efficiency, compressor_efficiency)
-        efficiency[value].append(a[0])
-        work_coeff[value].append(a[1])
+        if a[0]>=0:
+            work_coeff[value].append(a[1])
+        else:
+            break
 
 work = dict({})
 for value in T_c:
@@ -80,9 +89,10 @@ H_opt = copliter_work(eps_opt_H, m, T_opimal, T_a, turbine_efficiency, compresso
 
 plt.figure(layout = 'constrained')
 for value in list(work_coeff.keys()):
+    eps = list(range(0,len(work_coeff[value])))
     plt.plot(eps,work_coeff[value], label = f'{value} K')  
 
-plt.ylim([0,0.8])
+plt.ylim([0,0.9])
 plt.xlabel('Степень сжатия')
 plt.ylabel('Коэффициент полезной работы')
 plt.title("Коэффициент полезной работы от степени сжатия при разных температурах газа перед турбиной")
@@ -93,6 +103,7 @@ plt.grid()
 plt.figure(layout = 'constrained')
     
 for value in list(efficiency.keys()):
+    eps = list(range(0,len(efficiency[value])))
     plt.plot(eps,efficiency[value], label = f'{value} K')  
 
 plt.ylim([0,1])
@@ -109,6 +120,7 @@ plt.grid()
 
 plt.figure(layout = 'constrained')
 for value in list(work.keys()):
+    eps = list(range(0,len(work[value])))
     plt.plot(eps,work[value], label = f'{value} K')  
 
 plt.ylim([0,500])
