@@ -2,8 +2,8 @@ from typing import List, Tuple, Optional
 from iapws import IAPWS97
 from iapws import IAPWS97 as gas
 import matplotlib.pyplot as plt
+from matplotlib import image as mpimg
 import numpy as np
-
 #Инициализация параметров расчета  
 MPa = 10 ** 6
 kPa = 10 ** 3
@@ -114,6 +114,11 @@ def coeff (pk, p_feed_water, t_feed_water, internal_efficiency, p_middle, t_midd
         point2 = find_point2(p_middle, t_middle, p0, pk, internal_efficiency)
         coeff = (( point_water[1].T -  point2[1].T) / (to_kelvin(374.2) -  point2[1].T))
         print("Коэфициент для нахождения коэфициента", coeff)
+        image = mpimg.imread("graf.png")
+        plt.axis('off')
+        plt.imshow(image)
+        plt.show()
+
         cf = float(input("Коэфициент с графика" ))
         return cf
 
