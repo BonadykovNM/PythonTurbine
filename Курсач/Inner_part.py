@@ -4,6 +4,9 @@ from iapws import IAPWS97 as gas
 import matplotlib.pyplot as plt
 from matplotlib import image as mpimg
 import numpy as np
+import pandas as pd 
+import os
+
 #Инициализация параметров расчета  
 MPa = 10 ** 6
 kPa = 10 ** 3
@@ -98,7 +101,40 @@ def find_point_water(pk, p_feed_water, t_feed_water):
         point_feed_water = gas(P= p_feed_water * unit, T=to_kelvin(t_feed_water))
         return point_k_water, point_feed_water
 
-def coeff (pk, p_feed_water, t_feed_water, internal_efficiency, p_middle, t_middle, p0):
+def check_graf(z,coef):
+        """
+        Функция поска значения коэффициента по графику
+        :param integer z: количество регенеративных подогревателей
+        :param float coef: значение коефициента для графика
+        :return float: Значение коэфициента 
+        """ 
+        if z > 7:
+            z = 10
+        xl = pd.read_excel('data.xlsx',sheet_name =f'z = {z}')
+        coef_ = pd.DataFrame(xl,columns=['coef'])
+        y_ = pd.DataFrame(xl,columns=['y'])
+        ks = []
+        y = []
+        for vl in coef_:
+            for value in coef_[vl]:
+                ks.append(value)
+        for vl in y_:
+                for value in y_[vl]:
+                    y.append(value)
+        f_y = np.interp(coef,ks,y)
+        plt.plot(ks, y)
+        if z > 7:
+            plt.plot(coef, f_y,label = 'z = ∞')
+        else:
+            plt.plot(coef, f_y,label = f'z = {z}')
+        plt.legend()
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.grid()
+        plt.show()
+        return f_y
+
+def coeff (pk, p_feed_water, t_feed_water, internal_efficiency, p_middle, t_middle, p0, z):
         """
         Функция расчета коэфициента
         :param float pk: Давление точки конденсатора в Па
@@ -108,18 +144,20 @@ def coeff (pk, p_feed_water, t_feed_water, internal_efficiency, p_middle, t_midd
         :param float p_middle: Давление промежуточного перегрева в Па
         :param float t_middle: Температура промежуточного перегрева в К
         :param float p0: Давление начальной точки в Па
+        :param float z: число регениративных подогревателей 
         :return float: Значение коэфициента
         """  
         point_water = find_point_water(pk, p_feed_water, t_feed_water)
         point2 = find_point2(p_middle, t_middle, p0, pk, internal_efficiency)
         coeff = (( point_water[1].T -  point2[1].T) / (to_kelvin(374.2) -  point2[1].T))
         print("Коэфициент для нахождения коэфициента", coeff)
+
         image = mpimg.imread("graf.png")
         plt.axis('off')
         plt.imshow(image)
         plt.show()
-
-        cf = float(input("Коэфициент с графика" ))
+        cf = check_graf(z,coeff)
+        print (cf)
         return cf
 
 def complite_ksi_infinity(p0,
@@ -129,7 +167,8 @@ def complite_ksi_infinity(p0,
                           pk,
                           p_feed_water,
                           t_feed_water,
-                          internal_efficiency
+                          internal_efficiency,
+                          z
                           ):
         """
         Функция расчета коэфициента ksi
@@ -140,6 +179,7 @@ def complite_ksi_infinity(p0,
         :param float p_feed_water: Давление питательной воды в Па
         :param float t_feed_water: Температура питательной воды в К
         :param float internal_efficiency: КПД цилиндров турбины
+        :param float z: число регениративных подогревателей
         :return float: Значение коэфициента ksi
         """ 
 
@@ -148,7 +188,7 @@ def complite_ksi_infinity(p0,
         point_water = find_point_water(pk, p_feed_water, t_feed_water)
         point0 = find_point0(p0, t0, p_middle)
         point1 = find_point1(p0, t0, p_middle, internal_efficiency)
-        coef = coeff (pk, p_feed_water, t_feed_water, internal_efficiency, p_middle, t_middle, p0)
+        coef = coeff (pk, p_feed_water, t_feed_water, internal_efficiency, p_middle, t_middle, p0, z)
         numenator_without = point2[1].T * ( point_middle[0].s -  point_water[0].s)
         denumenator_without = (point0[1].h - point1[0].h) + (point_middle[1].h - point_water[0].h)
         without_part = 1 - (numenator_without / denumenator_without)
@@ -166,7 +206,8 @@ def complite_estimated_heat_drop(p0,
                                  pk,
                                  p_feed_water,
                                  t_feed_water,
-                                 internal_efficiency
+                                 internal_efficiency,
+                                 z
                                  ):
         """
         Функция расчета теплоперепада и эффективности 
@@ -178,6 +219,7 @@ def complite_estimated_heat_drop(p0,
         :param float p_feed_water: Давление питательной воды в Па
         :param float t_feed_water: Температура питательной воды в К
         :param float internal_efficiency: КПД цилиндров турбины
+        :param float z: число регениративных подогревателей
         :return Tuple[]: Значение теплоперепада, значение эффективности 
         """ 
         point0 = find_point0(p0, t0, p_middle)
@@ -185,7 +227,7 @@ def complite_estimated_heat_drop(p0,
         point2 = find_point2(p_middle, t_middle, p0, pk, internal_efficiency)
         point_middle = find_point_middle(p_middle, t_middle,p0)
         point_water = find_point_water(pk, p_feed_water, t_feed_water)
-        ksi = complite_ksi_infinity(p0, t0, p_middle, t_middle, pk, p_feed_water, t_feed_water, internal_efficiency)
+        ksi = complite_ksi_infinity(p0, t0, p_middle, t_middle, pk, p_feed_water, t_feed_water, internal_efficiency, z)
         eff_num = ( point0[0].h - point1[0].h) *  internal_efficiency + (point_middle[0].h - point2[0].h) *  internal_efficiency
         eff_denum = ( point0[0].h - point1[0].h) *  internal_efficiency + (point_middle[1].h -  point_water[0].h)
         efficiency = (eff_num / eff_denum) * (1 / (1 - ksi))
@@ -202,7 +244,8 @@ def complite_inlet_mass_flow(p0,
                              internal_efficiency,
                              mechanical_efficiency,
                              generator_efficiency,
-                             electrical_power
+                             electrical_power,
+                             z
                              ):
         """
         Функция расчета расхода в турбину на входе
@@ -217,6 +260,7 @@ def complite_inlet_mass_flow(p0,
         :param float mechanical_efficiency:  Механический КПД турбины
         :param float generator_efficiency: КПД электрического генератора
         :param float electrical_power: Электрическая мощность
+        :param float z: число регениративных подогревателей
         :return float: Значение расхода в турбину на входе
         """ 
         estimated_heat_drop = complite_estimated_heat_drop(p0,
@@ -226,7 +270,8 @@ def complite_inlet_mass_flow(p0,
                                                            pk,
                                                            p_feed_water,
                                                            t_feed_water,
-                                                           internal_efficiency
+                                                           internal_efficiency,
+                                                           z
                                                            )
         inlet_mass_flow =  electrical_power / ( estimated_heat_drop[0] * 1000 *  mechanical_efficiency *  generator_efficiency)
         return inlet_mass_flow
@@ -241,7 +286,8 @@ def complite_condenser_mass_flow(p0,
                                  internal_efficiency,
                                  mechanical_efficiency,
                                  generator_efficiency,
-                                 electrical_power
+                                 electrical_power,
+                                 z
                                  ): 
         """
         Функция расчета расхода в конденсатор
@@ -256,6 +302,7 @@ def complite_condenser_mass_flow(p0,
         :param float mechanical_efficiency:  Механический КПД турбины
         :param float generator_efficiency: КПД электрического генератора
         :param float electrical_power: Электрическая мощность
+        :param float z: число регениративных подогревателей
         :return float: Значение расхода в конденсатор
         """ 
         estimated_heat_drop = complite_estimated_heat_drop(p0,
@@ -265,12 +312,50 @@ def complite_condenser_mass_flow(p0,
                                                            pk,
                                                            p_feed_water,
                                                            t_feed_water,
-                                                           internal_efficiency
+                                                           internal_efficiency,
+                                                           z
                                                            )
         point2 = find_point2(p_middle, t_middle, p0, pk, internal_efficiency)
         point_water = find_point_water(pk,p_feed_water,t_feed_water)
         condenser_mass_flow = (electrical_power / ((point2[1].h - point_water[0].h) * 1000 *  mechanical_efficiency *  generator_efficiency) * ((1 / estimated_heat_drop[1]) - 1))
         return condenser_mass_flow
+
+def point_s(p0, t0, p_middle, t_middle, pk, internal_efficiency):
+    """
+    Функция расчета расхода в конденсатор
+    :param float p0: Давление начальной точки в Па
+    :param float t0: Температура начальной точки в К
+    :param float p_middle: Давление промежуточного перегрева в Па
+    :param float t_middle: Температура промежуточного перегрева в К
+    :param float pk: Давление точки конденсатора в Па
+    :param float internal_efficiency: КПД цилиндров турбины
+    :return float: Tочки процесса
+    """
+    point0 = find_point0(p0, t0, p_middle)            
+    point1 = find_point1(p0, t0, p_middle, internal_efficiency)
+    point2 = find_point2(p_middle, t_middle, p0, pk, internal_efficiency)
+    point_middle = find_point_middle(p_middle, t_middle, p0)
+
+    return point0, point1, point2, point_middle
+
+def tab_point(p0,t0,p_middle,t_middle,pk,internal_efficiency):
+    """
+    функция создания DataFrame для точке процесса 
+    :param float p0: Давление начальной точки в Па
+    :param float t0: Температура начальной точки в К
+    :param float p_middle: Давление промежуточного перегрева в Па
+    :param float t_middle: Температура промежуточного перегрева в К
+    :param float pk: Давление точки конденсатора в Па
+    :param float internal_efficiency: КПД цилиндров турбины
+    :return DataFrame: Tочки процесса
+    """
+    point0, point1, point2, point_middle = point_s(p0, t0, p_middle, t_middle, pk,internal_efficiency)
+    df1 = pd.DataFrame([(point0[1].P, point1[1].P, point2[1].P, point_middle[1].P),
+                        (point0[1].T, point1[1].T, point2[1].T, point_middle[1].T),
+                        (point0[1].h, point1[1].h, point2[1].h, point_middle[1].h),
+                        (point0[1].s, point1[1].s, point2[1].s, point_middle[1].s)],
+                        index=["P, МПа", "T, K", r"h, $\frac{кДж}{кг}$", r"S, $\frac{кДж}{кг * K}$ "], columns=["point 0", "point 1", "point 2", "point middle"])
+    return df1
 
 def legend_without_duplicate_labels(ax: plt.Axes) -> None:
     """
@@ -427,6 +512,7 @@ def plot_hs_diagram(ax: plt.Axes, points: List[IAPWS97]) -> None:
     ax.legend()
     ax.grid()
     legend_without_duplicate_labels(ax)
+
 
 
 
