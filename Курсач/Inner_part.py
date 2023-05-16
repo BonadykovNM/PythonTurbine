@@ -644,7 +644,7 @@ def selection_nozzle_profile():
 
 
 def grid_tab():
-    name,alpha1_e,alpha_0, t_otn, M1t_, b1, f1, I_1_min ,W_1_min, alpha_install = selection_nozzle_profile()
+    _,alpha1_e,alpha_0, t_otn, M1t_, b1, f1, I_1_min ,W_1_min, _ = selection_nozzle_profile()
     alpha1_e = str(f'{alpha1_e[0]}' + ' - ' + f'{alpha1_e[-1]}')
     alpha_0 = str(f'{alpha_0[0]}' + ' - ' + f'{alpha_0[-1]}')
     t_otn = str(f'{t_otn[0]}' + ' - ' + f'{round(t_otn[-1],2)}')
@@ -667,8 +667,8 @@ def grid_tab():
 
 
 def correction_params(point0, d_sr, n, p, H0, inlet_mass_flow):
-    H0_c, H0_p, h1t, v1t, F1_, c1t, a1t, M1t, l1_, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-    name,alpha1_e,alpha_0, t_otn, M1t_, b1, f1, I_1_min, W_1_min, alpha_install = selection_nozzle_profile()
+    _, _, _, v1t, _, c1t, _, _, _, _ = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _,_,_, t_otn, _, b1, _, _, _, _ = selection_nozzle_profile()
     mu1_ = 0.97
     F1 = (inlet_mass_flow * np.array(v1t)) / (mu1_ * c1t) # Выходная площадь сопловой решетки (пред) 
     alf1_e = 13 # Угол направления скорости
@@ -687,42 +687,42 @@ def correction_params(point0, d_sr, n, p, H0, inlet_mass_flow):
 
 
 def atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow):
-        name,alpha1_e,alpha_0, t_otn, M1t_, b1, f1, I_1_min ,W_1_min, alpha_install = selection_nozzle_profile()
-        el1, F1, alf1_e, e_opt, l1, mu1 ,z1 ,t_1 = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-        H0_c, H0_p, h1t, v1t, F1_, c1t, a1t, M1t, l1_, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-        ksi_p = 2 * 10 ** (-2) #коэффициент профильных потерь
-        ksi_s = 4.4 * 10 ** (-2)
-        ksi_k = ksi_s - ksi_p 
-        phi_s = np.sqrt(1 - ksi_s)
-        b1_l1 = (b1 * 10 ** -3) / l1
-        phi_s_ = 0.98 - 0.008 * (b1 * 10 ** (-3) / l1) #проверочный коэфициент скорости сопловой решотки 
-        delt = ((phi_s_- phi_s) / phi_s_) * 100 
-        if delt > 1:
-            raise ValueError("ищи ошибку") 
-        c1 = c1t * phi_s
-        alpha_1 = math.degrees(math.asin((mu1 / phi_s) * math.sin(math.radians(alf1_e))))
-        return ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c1, alpha_1
+    _,_,_, _, _, b1, _, _ ,_, _ = selection_nozzle_profile()
+    _, _, alf1_e, _, l1, mu1 ,_ ,_ = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, c1t, _, _, _, _ = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    ksi_p = 2  #коэффициент профильных потерь
+    ksi_s = 4.4 
+    ksi_k = ksi_s - ksi_p 
+    phi_s = np.sqrt(1 - ksi_s/100)
+    b1_l1 = (b1 * 10 ** -3) / l1
+    phi_s_ = 0.98 - 0.008 * (b1 * 10 ** (-3) / l1) #проверочный коэфициент скорости сопловой решотки 
+    delt = ((phi_s_- phi_s) / phi_s_) * 100 
+    if delt > 1:
+        raise ValueError("ищи ошибку") 
+    c1 = c1t * phi_s
+    alpha_1 = math.degrees(math.asin((mu1 / phi_s) * math.sin(math.radians(alf1_e))))
+    return ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c1, alpha_1
 
 
 def calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow):
-        u = speed_u (d_sr,n)
-        H0_c, H0_p, h1t, v1t, F1_, c1t, a1t, M1t, l1_, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-        el1, F1, alf1_e, e_opt, l1, mu1 ,z1 ,t_1 = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-        ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-        w_1 = math.sqrt(c1 ** 2 + u ** 2 - 2 * c1 * u * math.cos(math.radians(alpha_1)))
-        beta_1 = math.degrees(math.atan(math.sin(math.radians(alpha_1)) / (math.cos(math.radians(alpha_1)) - u / c1)))
-        delta_Hc = c1t ** 2 / 2 * (1 - phi_s ** 2) / 1000  
-        h1 = point_1_t.h + delta_Hc
-        point_1_ = gas(P = point_1_t.P, h = h1)  
-        h2t = point_1_.h - H0_p
-        point_2_t = gas(s = point_1_.s, h = h2t)
-        w2t = math.sqrt(2 * H0_p * 1000 + w_1 ** 2)
-        delta = 0.004
-        l2 = l1 + delta  
-        k2 = 1.3
-        a2t = math.sqrt(k2 * (point_2_t.P * MPa) * point_2_t.v)
-        M2t = w2t / a2t
-        return w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t
+    u = speed_u (d_sr,n)
+    _, H0_p, _, _, _, c1t, _, _, _, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, l1, _ ,_ ,_ = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, phi_s, _, c1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    w_1 = math.sqrt(c1 ** 2 + u ** 2 - 2 * c1 * u * math.cos(math.radians(alpha_1)))
+    beta_1 = math.degrees(math.atan(math.sin(math.radians(alpha_1)) / (math.cos(math.radians(alpha_1)) - u / c1)))
+    delta_Hc = (0.5 * c1t ** 2) * (1 - phi_s ** 2)
+    h1 = point_1_t.h + delta_Hc/1000
+    point_1_ = gas(P = point_1_t.P, h = h1)  
+    h2t = point_1_.h - H0_p
+    point_2_t = gas(s = point_1_.s, h = h2t)
+    w2t = math.sqrt(2 * H0_p * 1000 + w_1 ** 2)
+    delta = 0.004
+    l2 = l1 + delta  
+    k2 = 1.3
+    a2t = math.sqrt(k2 * (point_2_t.P * MPa) * point_2_t.v)
+    M2t = w2t / a2t
+    return w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t
 
 
 def grid_working_selection():
@@ -767,9 +767,9 @@ def grid_tab_work():
 
 
 def specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow):
-    w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
-    el1, F1, alf1_e, e_opt, l1, mu1 ,z1 ,t_1 = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-    name, beta_2_e, beta_1_, t_otn, M2t_, b2, f2, I_2_min, W_2_min, alpha_install = grid_working_selection()
+    _, _, w2t, l2, _, _, _, point_2_t = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, e_opt, _, _ ,_ ,_ = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, t_otn, M2t_, b2, _, _, _, _ = grid_working_selection()
     mu2 = 0.965 - 0.01 * (b2 * 10 ** -3 / l2)
     F2 = (inlet_mass_flow * point_2_t.v) / (mu2 * w2t)
     beta2_e = math.degrees(F2/(e_opt * math.pi * d_sr * l2))
@@ -784,14 +784,13 @@ def specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flo
 
 def parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow):
     u = speed_u (d_sr,n)
-    H0_c, H0_p, h1t, v1t, F1_, c1t, a1t, M1t, l1_, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-    mu2, F2, beta2_e, z_2, t2opt, beta2_ust, b2_l2 = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
-    w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
-    name, beta_2_e, beta_1_, t_otn, M2t_, b2, f2, I_2_min, W_2_min, alpha_install = grid_working_selection()
-    ksi_grid = 5.5 * 10 **(-2)   
-    ksi_sum_g = 9.8 * 10 **(-2) 
+    mu2, _, beta2_e, _, _, _, _ = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, w2t, l2, _, _, _, _ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, b2, _, _, _, _ = grid_working_selection()
+    ksi_grid = 5.5    
+    ksi_sum_g = 9.8 
     ksi_end_grid = ksi_sum_g - ksi_grid 
-    psi = math.sqrt(1 - ksi_sum_g)
+    psi = math.sqrt(1 - ksi_sum_g/100)
     psi_ = 0.96 - 0.014 * (b2 * 10 ** -3 / l2)
     delta_psi = (psi - psi_) / psi
     w_2 = w2t * psi
@@ -803,8 +802,8 @@ def parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow):
 
 def plot_triangles(point0, d_sr, n, p, H0, inlet_mass_flow):
     u = speed_u (d_sr,n)
-    ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c_1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-    ksi_grid, ksi_sum_g, ksi_end_grid, psi, beta_2, c_2, alpha_2, w_2 =  parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, c_1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, beta_2, _, _, w_2 =  parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow)
     sin_alpha_1 = math.sin(math.radians(alpha_1))
     cos_alpha_1 = math.cos(math.radians(alpha_1))
     sin_beta_2 = math.sin(math.radians(beta_2))
@@ -833,7 +832,7 @@ def plot_triangles(point0, d_sr, n, p, H0, inlet_mass_flow):
 def calculation_velocity_ratio(point0, d_sr, n, p, H0, inlet_mass_flow):
     
     u = speed_u (d_sr,n)
-    ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c_1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, phi_s, _, _, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     cf = math.sqrt(2 * H0 * 1000)
     u_cf = u / cf
     u_cf_opt = phi_s * math.cos(math.radians(math.radians(alpha_1))) / (2 * math.sqrt(1 - p))
@@ -842,20 +841,20 @@ def calculation_velocity_ratio(point0, d_sr, n, p, H0, inlet_mass_flow):
 
 def calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow):
     u = speed_u (d_sr,n)
-    w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
-    H0_c, H0_p, h1t, v1t, F1_, c1t, a1t, M1t, l1_, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-    ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c_1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-    ksi_grid, ksi_sum_g, ksi_end_grid, psi, beta_2, c_2, alpha_2, w_2 =  parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow)
-    delta_Hp = w2t ** 2 / 2 * (1 - psi ** 2) / 1000
-    h2 = point_2_t.h + delta_Hp
+    w_1, beta_1, w2t, _, _, _, delta_Hc, point_2_t = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, c_1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, psi, beta_2, c_2, alpha_2, w_2 =  parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow)
+    delta_Hp = (0.5 * w2t ** 2) * (1 - psi ** 2)
+    h2 = point_2_t.h + delta_Hp / 1000
     point_2_ = gas(P = point_2_t.P, h = h2)
     point_t_konec = gas(h =point0[1].h - H0, P = point_2_.P)
-    delta_Hvc = c_2 ** 2 / 2 / 1000 
+    delta_Hvc = ((c_2 ** 2) / 2) 
     x_vc = 0
-    E0 = H0 - x_vc * delta_Hvc  
+    E0 = H0 * 1000 - x_vc * delta_Hvc  
+
     eff = (E0 - delta_Hc - delta_Hp - (1 - x_vc) * delta_Hvc) / E0
-    #eff_ = (u * (c_1 * math.cos(math.radians(alpha_1)) + c_2 * math.cos(math.radians(alpha_2)))) / E0 / 1000
-    eff_ = (u * (w_1 * math.cos(math.radians(beta_1)) + w_2 * math.cos(math.radians(beta_2)))) / E0 / 1000
+    #eff_ = (u * (c_1 * math.cos(math.radians(alpha_1)) + c_2 * math.cos(math.radians(alpha_2)))) / E0 
+    eff_ = (u * (w_1 * math.cos(math.radians(beta_1)) + w_2 * math.cos(math.radians(beta_2)))) / E0 
     delta_eff = (eff - eff_) / eff   
     return delta_Hp, delta_Hvc, E0, eff, eff_, delta_eff, point_2_, point_t_konec
 
@@ -894,7 +893,7 @@ def efficiency_graph(point0, d_sr, n, p, H0, inlet_mass_flow):
     plt.show()
 
     
-def data_output(point0, point1, point2, d_sr, n, p, H0, inlet_mass_flow):
+def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     H0_c, H0_p, h1t, v1t, F1_, c1t, a1t, M1t, l1_, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     name,alpha1_e,alpha_0, t_otn, M1t_, b1, f1, I_1_min ,W_1_min, alpha_install = selection_nozzle_profile()
     d = {
