@@ -432,166 +432,165 @@ def tab_flow(p0,
         pass
 
 
-def plot_hs(p0, t0, p_middle, t_middle, pk, internal_efficiency):
-    point0, point1, point2, point_middle = point_s(p0, t0, p_middle, t_middle, pk,internal_efficiency)
-
-    def legend_without_duplicate_labels(ax: plt.Axes) -> None:
-        """
-        Убирает дубликаты из легенды графика
-        :param plt.Axes ax: AxesSubplot с отрисованными графиками
-        :return None:
-        """
-        handles, labels = ax.get_legend_handles_labels()
-        unique = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
-        ax.legend(*zip(*unique))
+    
+def legend_without_duplicate_labels(ax: plt.Axes) -> None:
+    """
+    Убирает дубликаты из легенды графика
+    :param plt.Axes ax: AxesSubplot с отрисованными графиками
+    :return None:
+    """
+    handles, labels = ax.get_legend_handles_labels()
+    unique = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
+    ax.legend(*zip(*unique))
 
     
-    def plot_process(ax: plt.Axes, points: List[IAPWS97], **kwargs) -> None:
-        """
-        Отрисовка процесса расширения по точкам
-        :param plt.Axes ax: AxesSubplot с отрисованными графиками
-        :param List[IAPWS97] points: Список инициализиованных точек процесса
-        :param kwargs:
-        :return None:
-        """
-        ax.plot([point.s for point in points], [point.h for point in points], **kwargs)
+def plot_process(ax: plt.Axes, points: List[IAPWS97], **kwargs) -> None:
+    """
+    Отрисовка процесса расширения по точкам
+    :param plt.Axes ax: AxesSubplot с отрисованными графиками
+    :param List[IAPWS97] points: Список инициализиованных точек процесса
+    :param kwargs:
+    :return None:
+    """
+    ax.plot([point.s for point in points], [point.h for point in points], **kwargs)
 
     
-    def get_isobar(point: IAPWS97) -> Tuple[List[float], List[float]]:
-        """
-        Собрать координаты изобары в hs осях
-        :param IAPWS97 point: Точка для изобары
-        :return Tuple[List[float], List[float]]:
-        """
-        s = point.s
-        s_values = np.arange(s * 0.9, s * 1.1, 0.2 * s / 1000)
-        h_values = [gas(P=point.P, s=_s).h for _s in s_values]
-        return s_values, h_values
+def get_isobar(point: IAPWS97) -> Tuple[List[float], List[float]]:
+    """
+    Собрать координаты изобары в hs осях
+    :param IAPWS97 point: Точка для изобары
+    :return Tuple[List[float], List[float]]:
+    """
+    s = point.s
+    s_values = np.arange(s * 0.9, s * 1.1, 0.2 * s / 1000)
+    h_values = [gas(P=point.P, s=_s).h for _s in s_values]
+    return s_values, h_values
 
 
-    def _get_isoterm_steam(point: IAPWS97) -> Tuple[List[float], List[float]]:
-        """
-        Собрать координаты изотермы для пара в hs осях
-        :param IAPWS97 point: Точка для изотермы
-        :return Tuple[List[float], List[float]]:
-        """
-        t = point.T
-        p = point.P
-        s = point.s
-        s_max = s * 1.2
-        s_min = s * 0.8
-        p_values = np.arange(p * 0.8, p * 1.2, 0.4 * p / 1000)
-        h_values = np.array([gas(P=_p, T=t).h for _p in p_values])
-        s_values = np.array([gas(P=_p, T=t).s for _p in p_values])
-        mask = (s_values >= s_min) & (s_values <= s_max)
-        return s_values[mask], h_values[mask]
+def _get_isoterm_steam(point: IAPWS97) -> Tuple[List[float], List[float]]:
+    """
+    Собрать координаты изотермы для пара в hs осях
+    :param IAPWS97 point: Точка для изотермы
+    :return Tuple[List[float], List[float]]:
+    """
+    t = point.T
+    p = point.P
+    s = point.s
+    s_max = s * 1.2
+    s_min = s * 0.8
+    p_values = np.arange(p * 0.8, p * 1.2, 0.4 * p / 1000)
+    h_values = np.array([gas(P=_p, T=t).h for _p in p_values])
+    s_values = np.array([gas(P=_p, T=t).s for _p in p_values])
+    mask = (s_values >= s_min) & (s_values <= s_max)
+    return s_values[mask], h_values[mask]
 
 
-    def _get_isoterm_two_phases(point: IAPWS97) -> Tuple[List[float], List[float]]:
-        """
-        Собрать координаты изотермы для влажного пара в hs осях
-        :param IAPWS97 point: Точка для изотермы
-        :return Tuple[List[float], List[float]]:
-        """
-        x = point.x
-        p = point.P
-        x_values = np.arange(x * 0.9, min(x * 1.1, 1), (1 - x) / 1000)
-        h_values = np.array([gas(P=p, x=_x).h for _x in x_values])
-        s_values = np.array([gas(P=p, x=_x).s for _x in x_values])
-        return s_values, h_values
+def _get_isoterm_two_phases(point: IAPWS97) -> Tuple[List[float], List[float]]:
+    """
+    Собрать координаты изотермы для влажного пара в hs осях
+    :param IAPWS97 point: Точка для изотермы
+    :return Tuple[List[float], List[float]]:
+    """
+    x = point.x
+    p = point.P
+    x_values = np.arange(x * 0.9, min(x * 1.1, 1), (1 - x) / 1000)
+    h_values = np.array([gas(P=p, x=_x).h for _x in x_values])
+    s_values = np.array([gas(P=p, x=_x).s for _x in x_values])
+    return s_values, h_values
 
 
-    def get_isoterm(point) -> Tuple[List[float], List[float]]:
-        """
-        Собрать координаты изотермы в hs осях
-        :param IAPWS97 point: Точка для изотермы
-        :return Tuple[List[float], List[float]]:
-        """
-        if point.phase == 'Two phases':
-            return _get_isoterm_two_phases(point)
-        return _get_isoterm_steam(point)
+def get_isoterm(point) -> Tuple[List[float], List[float]]:
+    """
+    Собрать координаты изотермы в hs осях
+    :param IAPWS97 point: Точка для изотермы
+    :return Tuple[List[float], List[float]]:
+    """
+    if point.phase == 'Two phases':
+        return _get_isoterm_two_phases(point)
+    return _get_isoterm_steam(point)
 
 
-    def plot_isolines(ax: plt.Axes, point: IAPWS97) -> None:
-        """
-        Отрисовка изобары и изотермы
-        :param plt.Axes ax: AxesSubplot на котором изобразить линии
-        :param IAPWS97 point: Точка для изображения изолиний
-        :return None:
-        """
-        s_isobar, h_isobar = get_isobar(point)
-        s_isoterm, h_isoterm = get_isoterm(point)
-        ax.plot(s_isobar, h_isobar, color='green', label='Изобара')
-        ax.plot(s_isoterm, h_isoterm, color='blue', label='Изотерма')
+def plot_isolines(ax: plt.Axes, point: IAPWS97) -> None:
+    """
+    Отрисовка изобары и изотермы
+    :param plt.Axes ax: AxesSubplot на котором изобразить линии
+    :param IAPWS97 point: Точка для изображения изолиний
+    :return None:
+    """
+    s_isobar, h_isobar = get_isobar(point)
+    s_isoterm, h_isoterm = get_isoterm(point)
+    ax.plot(s_isobar, h_isobar, color='green', label='Изобара')
+    ax.plot(s_isoterm, h_isoterm, color='blue', label='Изотерма')
 
     
-    def plot_points(ax: plt.Axes, points: List[IAPWS97]) -> None:
-        """
-        Отрисовать точки на hs-диаграмме
-        :param plt.Axes ax: AxesSubplot на котором изобразить точки
-        :param List[IAPWS97] points: Точки для отображения
-        return None
-        """
-        for point in points:
-            ax.scatter(point.s, point.h, s=50, color="red")
-            plot_isolines(ax, point)
+def plot_points(ax: plt.Axes, points: List[IAPWS97]) -> None:
+    """
+    Отрисовать точки на hs-диаграмме
+    :param plt.Axes ax: AxesSubplot на котором изобразить точки
+    :param List[IAPWS97] points: Точки для отображения
+    return None
+    """
+    for point in points:
+        ax.scatter(point.s, point.h, s=50, color="red")
+        plot_isolines(ax, point)
         
-    def get_humidity_constant_line(
-        point: IAPWS97,
-        max_p: float,
-        min_p: float,
-        x: Optional[float]=None
-    ) -> Tuple[List[float], List[float]]:
-        """
-        Собрать координаты линии с постоянной степенью сухости в hs осях
-        :param IAPWS97 point: Точка для изолинии
-        :param float max_p: Максимальное давление для линии
-        :param float min_p: Минимальное давление для линии
-        :param Optional[float] x: Степень сухости для отрисовки
-        :return Tuple[List[float], List[float]]:
-        """
-        _x = x if x else point.x
-        p_values = np.arange(min_p, max_p, (max_p - min_p) / 1000)
-        h_values = np.array([gas(P=_p, x=_x).h for _p in p_values])
-        s_values = np.array([gas(P=_p, x=_x).s for _p in p_values])
-        return s_values, h_values
+def get_humidity_constant_line(
+    point: IAPWS97,
+    max_p: float,
+    min_p: float,
+    x: Optional[float]=None
+) -> Tuple[List[float], List[float]]:
+    """
+    Собрать координаты линии с постоянной степенью сухости в hs осях
+    :param IAPWS97 point: Точка для изолинии
+    :param float max_p: Максимальное давление для линии
+    :param float min_p: Минимальное давление для линии
+    :param Optional[float] x: Степень сухости для отрисовки
+    :return Tuple[List[float], List[float]]:
+    """
+    _x = x if x else point.x
+    p_values = np.arange(min_p, max_p, (max_p - min_p) / 1000)
+    h_values = np.array([gas(P=_p, x=_x).h for _p in p_values])
+    s_values = np.array([gas(P=_p, x=_x).s for _p in p_values])
+    return s_values, h_values
 
-    def plot_humidity_lines(ax: plt.Axes, points: List[IAPWS97]) -> None:
-        """
-        Отрисовать изолинии для степеней сухости на hs-диаграмме
-        :param plt.Axes ax: AxesSubplot на котором изобразить изолинии
-        :param List[IAPWS97] points: Точки для отображения
-        return None
-        """
-        pressures = [point.P for point in points]
-        min_pressure = min(pressures) if min(pressures) > 700/1e6 else 700/1e6
-        max_pressure = max(pressures) if max(pressures) < 22 else 22
-        for point in points:
-            if point.phase == 'Two phases':
-                s_values, h_values = get_humidity_constant_line(point, max_pressure, min_pressure, x=1)
-                ax.plot(s_values, h_values, color="gray")
-                s_values, h_values = get_humidity_constant_line(point, max_pressure, min_pressure)
-                ax.plot(s_values, h_values, color="gray", label='Линия сухости')
-                ax.text(s_values[10], h_values[10], f'x={round(point.x, 2)}')
+def plot_humidity_lines(ax: plt.Axes, points: List[IAPWS97]) -> None:
+    """
+    Отрисовать изолинии для степеней сухости на hs-диаграмме
+    :param plt.Axes ax: AxesSubplot на котором изобразить изолинии
+    :param List[IAPWS97] points: Точки для отображения
+    return None
+    """
+    pressures = [point.P for point in points]
+    min_pressure = min(pressures) if min(pressures) > 700/1e6 else 700/1e6
+    max_pressure = max(pressures) if max(pressures) < 22 else 22
+    for point in points:
+        if point.phase == 'Two phases':
+            s_values, h_values = get_humidity_constant_line(point, max_pressure, min_pressure, x=1)
+            ax.plot(s_values, h_values, color="gray")
+            s_values, h_values = get_humidity_constant_line(point, max_pressure, min_pressure)
+            ax.plot(s_values, h_values, color="gray", label='Линия сухости')
+            ax.text(s_values[10], h_values[10], f'x={round(point.x, 2)}')
 
-    def plot_hs_diagram(ax: plt.Axes, points: List[IAPWS97]) -> None:
-        """
-        Построить изобары и изотермы для переданных точек. Если степень сухости у точки не равна 1, то построется
-        дополнительно линия соответствующей степени сухости
-        :param plt.Axes ax: AxesSubplot на котором изобразить изолинии
-        :param List[IAPWS97] points: Точки для отображения
-        return None
-        """
-        plot_points(ax, points)
-        plot_humidity_lines(ax, points)
-        ax.set_xlabel(r"S, $\frac{кДж}{кг * K}$", fontsize=14)
-        ax.set_ylabel(r"h, $\frac{кДж}{кг}$", fontsize=14)
-        ax.set_title("HS-диаграмма процесса расширения", fontsize=18)
-        ax.legend()
-        ax.grid()
-        legend_without_duplicate_labels(ax)
-    
+def plot_hs_diagram(ax: plt.Axes, points: List[IAPWS97]) -> None:
+    """
+    Построить изобары и изотермы для переданных точек. Если степень сухости у точки не равна 1, то построется
+    дополнительно линия соответствующей степени сухости
+    :param plt.Axes ax: AxesSubplot на котором изобразить изолинии
+    :param List[IAPWS97] points: Точки для отображения
+    return None
+    """
+    plot_points(ax, points)
+    plot_humidity_lines(ax, points)
+    ax.set_xlabel(r"S, $\frac{кДж}{кг * K}$", fontsize=14)
+    ax.set_ylabel(r"h, $\frac{кДж}{кг}$", fontsize=14)
+    ax.set_title("HS-диаграмма процесса расширения", fontsize=18)
+    ax.legend()
+    ax.grid()
+    legend_without_duplicate_labels(ax)
 
+def plot_hs(p0, t0, p_middle, t_middle, pk,internal_efficiency):    
+    point0, point1, point2, point_middle = point_s(p0, t0, p_middle, t_middle, pk,internal_efficiency)
     fig, ax  = plt.subplots(1, 1, figsize=(15, 15))
     plot_hs_diagram(
         ax,
@@ -601,6 +600,7 @@ def plot_hs(p0, t0, p_middle, t_middle, pk, internal_efficiency):
     plot_process(ax, points=[point_middle[0], point_middle[1], point2[1]], color='black')
     plot_process(ax, points=[point0[0], point0[1], point1[0]], alpha=0.5, color='grey')
     plot_process(ax, points=[point_middle[0], point_middle[1], point2[0]], alpha=0.5, color='grey')
+
 
 def speed_u (d_sr,n):
     u = np.pi * d_sr * n
@@ -722,7 +722,7 @@ def calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow):
     k2 = 1.3
     a2t = math.sqrt(k2 * (point_2_t.P * MPa) * point_2_t.v)
     M2t = w2t / a2t
-    return w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t
+    return w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t, point_1_
 
 
 def grid_working_selection():
@@ -767,7 +767,7 @@ def grid_tab_work():
 
 
 def specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow):
-    _, _, w2t, l2, _, _, _, point_2_t = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, w2t, l2, _, _, _, point_2_t, point_1_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, e_opt, _, _ ,_ ,_ = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, t_otn, M2t_, b2, _, _, _, _ = grid_working_selection()
     mu2 = 0.965 - 0.01 * (b2 * 10 ** -3 / l2)
@@ -785,7 +785,7 @@ def specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flo
 def parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow):
     u = speed_u (d_sr,n)
     mu2, _, beta2_e, _, _, _, _ = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
-    _, _, w2t, l2, _, _, _, _ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, w2t, l2, _, _, _, _, point_1_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, b2, _, _, _, _ = grid_working_selection()
     ksi_grid = 5.5    
     ksi_sum_g = 9.8 
@@ -841,7 +841,7 @@ def calculation_velocity_ratio(point0, d_sr, n, p, H0, inlet_mass_flow):
 
 def calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow):
     u = speed_u (d_sr,n)
-    w_1, beta_1, w2t, _, _, _, delta_Hc, point_2_t = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    w_1, beta_1, w2t, _, _, _, delta_Hc, point_2_t, point_1_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, c_1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, psi, beta_2, c_2, alpha_2, w_2 =  parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow)
     delta_Hp = (0.5 * w2t ** 2) * (1 - psi ** 2)
@@ -894,8 +894,8 @@ def efficiency_graph(point0, d_sr, n, p, H0, inlet_mass_flow):
 
     
 def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
-    H0_c, H0_p, h1t, v1t, F1_, c1t, a1t, M1t, l1_, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-    name,alpha1_e,alpha_0, t_otn, M1t_, b1, f1, I_1_min ,W_1_min, alpha_install = selection_nozzle_profile()
+    H0_c, H0_p, __, _, F1_, c1t, a1t, M1t, _, _ = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    name,_,_, _, _, _, _, _ ,_, alpha_install = selection_nozzle_profile()
     d = {
         'Показатель': ["Теплоперепад в сопловой решётке", 
                 "Теплоперепад в рабочей решётке", 
@@ -907,7 +907,7 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     'Значение': [round(H0_c,1),round(H0_p,1), round(c1t,3), round(a1t,3), round(M1t,3),round(F1_,3)]
     }
 
-    el1, F1, alf1_e, e_opt, l1, mu1 ,z1 ,t_1 = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    el1, _, _, e_opt, l1, mu1 ,z1 ,t_1 = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     g = {
         'Показатель': ["Произведение el1", 
             "Оптимальное значение степени парциальности", 
@@ -934,7 +934,7 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     'Значение': [alpha_install ,round(b1_l1,3), ksi_p, ksi_s, ksi_k, phi_s, c1, alpha_1]
     }
     
-    w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, _, _ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
 
     b = {
         'Показатель': ["Относительная скорость на выходе из сопловой решётки", 
@@ -971,7 +971,6 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
               "Абсолютная скорость на выходе из рабочей решётки",
               "Угол выхода абсолютной скорости из рабочей решётки",
               "Действительная относительная скорость на выходе из рабочей решётки"],
-        #'Parameters': ["ksi_grid", "ksi_sum_g", "ksi_end_grid", "psi", "psi_", "delta_psi", "beta_2", "c_2", "alpha_2", "w_2"],
         'Параметр': [r"$\xi_{проф}$", r"$\xi_{сум}$",r"$\xi_{конц}$", r"$\phi$", r"$\beta_{2}, град$",r"$c_{2}, \space \frac{м}{с}$", r"$\alpha_{2}, град$", r"$w_{2}, \space \frac{м}{с}$" ],
     'Значение': [ksi_grid, ksi_sum_g, ksi_end_grid, psi, beta_2, c_2, alpha_2, w_2]
     }
@@ -1006,11 +1005,12 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
 
 
 def inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow):
-    _, _, _, l2, _, _, delta_Hc, _ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, l2, _, _, delta_Hc, _,_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
     delta_Hp, delta_Hvc, E0, eff, _, _, _, _ = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, u_cf, _ = calculation_velocity_ratio(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, F1, alf1_e, e_opt, _, _ ,_ ,_ = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, beta2_ust, _ = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, b2, _, _, _, _ = grid_working_selection()   
     x_vc = 0
     d_п = d_sr + l2
     mu_a = 0.5
@@ -1035,8 +1035,43 @@ def inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow):
     H_i = E0 - delta_Hc - delta_Hp - (1-x_vc) * delta_Hvc - delta_Hy - delta_Htr - delta_Hparc
     eff_oi = H_i / E0
     N_i = inlet_mass_flow * H_i
-    return N_i
+    return ksi_tr,N_i
 
+def plot_reg(point0, d_sr, n, p, H0, inlet_mass_flow):
+    
+    _, _, _, _, _, _, _, _, _, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, _, _, point_2_t, point_1_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, _, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
+    fig, ax = plt.subplots(1,1,figsize=(10,10))
+    ax.set_xlim(6.22, 6.25)
+    ax.set_ylim(3250, 3375)
+    ax.grid()
+    plot_hs_diagram(ax = ax, points = [point0[0], point_1_t, point_1_, point_2_t, point_2_, point_t_konec])
+    plot_process(ax,[point0[0], point_1_], color='black')
+    plot_process(ax,[point_1_, point_2_],  color='black')
+    plot_process(ax,[point0[0], point_1_t, point_t_konec], alpha=0.5, color='grey')
+    plot_process(ax,[point_1_, point_2_t],  alpha=0.5, color='grey')
+    ax.grid()
+
+def outinlet():
+    v = {
+        'Показатель': ["Коэффициент профильных потерь в решётке", 
+              "Коэффициент суммарных потерь", 
+              "Коэффициент концевых потерь", 
+              "Коэффициент скорости рабочей решётки", 
+              "Угол направления относительной скорости на выходе из рабочей решётки", 
+              "Абсолютная скорость на выходе из рабочей решётки",
+              "Угол выхода абсолютной скорости из рабочей решётки",
+              "Действительная относительная скорость на выходе из рабочей решётки"],
+        
+        'Параметр': [r"$\xi_{проф}$", r"$\xi_{сум}$",r"$\xi_{конц}$", r"$\phi$", r"$\beta_{2}, град$",r"$c_{2}, \space \frac{м}{с}$", r"$\alpha_{2}, град$", r"$w_{2}, \space \frac{м}{с}$" ],
+        'Значение': [d, d,d ,d ,d ,d , d, d]
+        }
+ 
+    df = pd.DataFrame(data=v)
+    print(df)
+
+    pass 
 
 def determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p, H0):
 
@@ -1050,7 +1085,8 @@ def determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p
     p0 = real_p0
     h0 = point_0.h
     pz = 3.34 * MPa 
-    # Techincal params
+
+
     delta_diam = 0.2
     speed_coefficient = 0.93
     root_reaction_degree = 0.05
