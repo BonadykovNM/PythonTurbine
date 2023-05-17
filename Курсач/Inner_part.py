@@ -1005,4 +1005,133 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     pass
 
 
+def inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow):
+    _, _, _, l2, _, _, delta_Hc, _ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    delta_Hp, delta_Hvc, E0, eff, _, _, _, _ = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, u_cf, _ = calculation_velocity_ratio(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, F1, alf1_e, e_opt, _, _ ,_ ,_ = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, beta2_ust, _ = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
+    x_vc = 0
+    d_п = d_sr + l2
+    mu_a = 0.5
+    delta_a = 0.0025
+    mu_r = 0.75
+    delta_r = 0.001 * d_п
+    z_gr = 7
+    delta_э = (1/(mu_a * delta_a) ** 2 + z_gr/(mu_r * delta_r) ** 2) ** (-1/2)
+    ksi_by = (math.pi * d_п * delta_э * eff * math.sqrt((p + 1.8 * l2)/d_sr))/F1
+    delta_Hy = ksi_by * E0
+    k_tr = 0.7 * 10 ** (-3)
+    ksi_tr = k_tr * (d_sr ** 2) * (u_cf) ** 3 / F1
+    delta_Htr = ksi_tr * E0
+    k_v = 0.065
+    m = 1
+    ksi_v = k_v * (1 - e_opt) * m *( u_cf ) **3  / (math.sin(math.radians(alf1_e)) * e_opt)
+    B_2 = b2 * 10**-3 * math.sin(math.radians(beta2_ust))
+    i = 4
+    ksi_segm = 0.25 * B_2 * l2 * u_cf * eff * i / F1
+    ksi_parc = ksi_v + ksi_segm
+    delta_Hparc = ksi_parc * E0
+    H_i = E0 - delta_Hc - delta_Hp - (1-x_vc) * delta_Hvc - delta_Hy - delta_Htr - delta_Hparc
+    eff_oi = H_i / E0
+    N_i = inlet_mass_flow * H_i
+    return N_i
 
+
+def determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p, H0):
+
+    ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c1, alpha_1 = atlas_params(point_0, d_sr, n, p, H0, inlet_mass_flow)
+    delta_Hp, delta_Hvc, E0, eff, eff_, delta_eff, point_2_, point_t_konec = calculation_blade_efficiency(point_0, d_sr, n, p, H0, inlet_mass_flow)
+    n_stages = 11
+    delta_p0 = 0.05 *  p0
+    real_p0 =  p0 - delta_p0
+    point_0t = gas(P =  p0 * unit, T=to_kelvin(t0))
+    point_0 = gas(P= real_p0 * unit, h=point_0t.h)
+    p0 = real_p0
+    h0 = point_0.h
+    pz = 3.34 * MPa 
+    # Techincal params
+    delta_diam = 0.2
+    speed_coefficient = 0.93
+    root_reaction_degree = 0.05
+    discharge_coefficient = 0.96
+    overlapping = 0.003
+    efficiency = eff
+
+    avg_diam_1 = d_sr - delta_diam
+
+    veernost_1 = 37
+
+    def get_reaction_degree(root_dor, veernost):
+        return root_dor + (1.8 / (veernost + 1.8))
+
+    def get_u_cf(dor):
+        cos = np.cos(np.deg2rad(alpha_1))
+        return speed_coefficient * cos / (2 * (1 - dor) ** 0.5)
+
+    def get_heat_drop(diameter, u_cf):
+        first = (diameter / u_cf) ** 2
+        second = (n / 50) ** 2
+        return 12.3 * first * second
+
+    avg_reaction_degree_1 = get_reaction_degree(root_reaction_degree, veernost_1)
+    u_cf_1 = get_u_cf(avg_reaction_degree_1)
+    heat_drop_1 = get_heat_drop(avg_diam_1, u_cf_1)
+    h1 = point_0.h - heat_drop_1
+    point_2 = gas(h=h1, s=point_0.s)
+
+    upper = inlet_mass_flow * point_2.v * u_cf_1
+    lower = discharge_coefficient * np.sin(np.deg2rad(alpha_1)) * n * (np.pi * avg_diam_1) ** 2 * (1 - avg_reaction_degree_1) ** 0.5
+
+    blade_length_1 = upper / lower
+    blade_length_2 = blade_length_1 + overlapping
+
+    assert np.isclose(avg_diam_1 / blade_length_1, veernost_1, rtol=0.01)
+
+    root_diameter = avg_diam_1 - blade_length_2
+
+    point_zt = gas(P=pz * unit, s=point_0.s)
+    full_heat_drop = h0 - point_zt.h
+    actual_heat_drop = full_heat_drop * efficiency
+    hz = h0 - actual_heat_drop
+    point_z = gas(P=pz * unit, h=hz)
+
+    from scipy.optimize import fsolve
+
+    def equation_to_solve(x):
+        return x ** 2 + x * root_diameter - avg_diam_1 * blade_length_2 * point_z.v / point_2.v
+
+    blade_length_z = fsolve(equation_to_solve, 0.01)[0]
+    print(blade_length_z)
+
+    avg_diam_2 = root_diameter + blade_length_z
+    print(avg_diam_2)
+
+    def linear_distribution(left, right, x):
+        return (right - left) * x + left
+
+    x = np.cumsum(np.ones(n_stages) * 1 / (n_stages - 1)) - 1 / (n_stages - 1)
+    diameters = linear_distribution(avg_diam_1, avg_diam_2 , x)
+    blade_lengths = linear_distribution(blade_length_2, blade_length_z , x)
+    veernosts = diameters / blade_lengths
+    reaction_degrees = get_reaction_degree(root_dor=root_reaction_degree, veernost=veernosts)
+    u_cf = get_u_cf(dor=reaction_degrees)
+    heat_drops = get_heat_drop(diameters, u_cf)
+    output_speed_coeff_loss = np.full_like(heat_drops, 0.95)
+    output_speed_coeff_loss[0] = 1
+    actual_heat_drops = output_speed_coeff_loss * heat_drops
+    mean_heat_drop = np.mean(actual_heat_drops)
+    reheat_factor = 4.8 * 10 ** (-4) * (1 - efficiency) * full_heat_drop * (n_stages - 1) / n_stages
+    full_heat_drop * (1 + reheat_factor) / mean_heat_drop
+    bias = full_heat_drop * (1 + reheat_factor) - np.sum(actual_heat_drops)
+    bias = bias / n_stages
+    new_actual_heat_drop = actual_heat_drops + bias
+    return new_actual_heat_drop 
+
+def plot_distribution(point_0,p0,t0,n,inlet_mass_flow,d_sr, p, H0):
+    new_actual_heat_drop = determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p, H0)
+    fig, ax = plt.subplots(1, 1, figsize=(15,5))
+    ax.plot(range(1, 11), new_actual_heat_drop,  marker='o')
+    ax.set_xlabel("Номер ступени")
+    ax.set_ylabel("Теплоперепады по ступеням")
+    ax.grid()
