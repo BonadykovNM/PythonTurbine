@@ -613,7 +613,7 @@ def calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow):
     point_1_t = gas(h = h1t, s = point0[0].s)
     p1 = gas(h = h1t, s = point0[0].s).P # Давление за сопловой решоткой
     v1t = gas(h = h1t,s = point0[0].s).v # Удельный обьем за сопловой решоткой(теор)
-    c1t = np.sqrt(2 * H0_c * 10 ** 3) # Теоретиеская скорость выхода из соплавых лопаток
+    c1t = np.sqrt(2 * H0_c * 1000) # Теоретиеская скорость выхода из соплавых лопаток
     k = 1.4 # Показатель изоэнтропы
     a1t = np.sqrt(k* p1 * MPa * v1t)
     M1t = c1t / a1t #Число Маха
@@ -670,7 +670,7 @@ def correction_params(point0, d_sr, n, p, H0, inlet_mass_flow):
     _, _, _, v1t, _, c1t, _, _, _, _ = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     _,_,_, t_otn, _, b1, _, _, _, _ = selection_nozzle_profile()
     mu1_ = 0.97
-    F1 = (inlet_mass_flow * np.array(v1t)) / (mu1_ * c1t) # Выходная площадь сопловой решетки (пред) 
+    F1 = (inlet_mass_flow * v1t) / (mu1_ * c1t) # Выходная площадь сопловой решетки (пред) 
     alf1_e = 13 # Угол направления скорости
     el1 = F1 / (np.pi * d_sr * math.sin(math.radians(alf1_e)))# Произведение el1
     e_opt = 4 * np.sqrt(el1) # Оптимальное значение степени парциальности
@@ -835,7 +835,7 @@ def calculation_velocity_ratio(point0, d_sr, n, p, H0, inlet_mass_flow):
     _, _, _, phi_s, _, _, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     cf = math.sqrt(2 * H0 * 1000)
     u_cf = u / cf
-    u_cf_opt = phi_s * math.cos(math.radians(math.radians(alpha_1))) / (2 * math.sqrt(1 - p))
+    u_cf_opt = phi_s * math.cos(math.radians(alpha_1)) / (2 * math.sqrt(1 - p))
     return cf, u_cf, u_cf_opt
 
 
@@ -851,7 +851,6 @@ def calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow):
     delta_Hvc = ((c_2 ** 2) / 2) 
     x_vc = 0
     E0 = H0 * 1000 - x_vc * delta_Hvc  
-
     eff = (E0 - delta_Hc - delta_Hp - (1 - x_vc) * delta_Hvc) / E0
     #eff_ = (u * (c_1 * math.cos(math.radians(alpha_1)) + c_2 * math.cos(math.radians(alpha_2)))) / E0 
     eff_ = (u * (w_1 * math.cos(math.radians(beta_1)) + w_2 * math.cos(math.radians(beta_2)))) / E0 
@@ -873,6 +872,7 @@ def efficiency_graph(point0, d_sr, n, p, H0, inlet_mass_flow):
     Y1 = eff_
     Y2 = eff
     
+
     ax.plot(X1,Y1, label = 'По расчёту через скорости', color = 'blue')
     ax.plot(X1,Y2, label = 'По расчёту через потери энергии', color = 'red')
     ax.set_title("Зависимость лопаточного КПД от u/сф")
