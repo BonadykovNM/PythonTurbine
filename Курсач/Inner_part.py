@@ -432,7 +432,6 @@ def tab_flow(p0,
         pass
 
 
-    
 def legend_without_duplicate_labels(ax: plt.Axes) -> None:
     """
     Убирает дубликаты из легенды графика
@@ -635,7 +634,7 @@ def selection_nozzle_profile():
     alpha_0 = range(70, 120)
     t_otn = np.arange(0.72, 0.88, 0.01) 
     M1t_ = 0.85
-    b1 = 62.5
+    b1 = 52.5
     f1 = 4.09 # в см^2
     I_1_min = 0.591 # в см^4
     W_1_min = 0.575 # в см^3
@@ -895,28 +894,31 @@ def efficiency_graph(point0, d_sr, n, p, H0, inlet_mass_flow):
     
 def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     H0_c, H0_p, __, _, F1_, c1t, a1t, M1t, _, _ = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
-    name,_,_, _, _, _, _, _ ,_, alpha_install = selection_nozzle_profile()
+    name,alpha1_e,alpha_0, t_otn, M1t_, b1, f1, I_1_min, W_1_min, alpha_install = selection_nozzle_profile()
     d = {
         'Показатель': ["Теплоперепад в сопловой решётке", 
-                "Теплоперепад в рабочей решётке", 
+                "Теплоперепад в рабочей решётке",
+                "Распалагаемый теплоперепад ", 
                 "Теоретическая абсолютная скорость на выходе из сопловой решётки", 
                 "Скорость звука на выходе из сопловой решётки", 
                 "Число Маха на выходе из сопловой решётки", 
-                "Предварительная площадь выхода потока из сопловой решётки"],
-        'Параметр': [r"$H_{0c} \space \frac{кДж}{кг}$", r"$H_{0p} \space \frac{кДж}{кг}$", r"$c_{1t}, \space \frac{м}{с}$", r"$a_{1t}, \space \frac{м}{с}$", r"$M_{1t}$", r"$F_{1}, \space м^{2}$"],
-    'Значение': [round(H0_c,1),round(H0_p,1), round(c1t,3), round(a1t,3), round(M1t,3),round(F1_,3)]
+                "Предварительная площадь выхода потока из сопловой решётки",
+                "Стерень реактивности"],
+        'Параметр': [r"$H_{0c} \space \frac{кДж}{кг}$", r"$H_{0p} \space \frac{кДж}{кг}$", r"$H_{0} \space \frac{кДж}{кг}$",r"$c_{1t}, \space \frac{м}{с}$", r"$a_{1t}, \space \frac{м}{с}$", r"$M_{1t}$", r"$F_{1}, \space м^{2}$",r"$\rho$"],
+    'Значение': [round(H0_c,1),round(H0_p,1),round(H0,1), round(c1t,3), round(a1t,3), round(M1t,3),round(F1_,3), p]
     }
 
     el1, _, _, e_opt, l1, mu1 ,z1 ,t_1 = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     g = {
         'Показатель': ["Произведение el1", 
             "Оптимальное значение степени парциальности", 
-            "Высота сопловых лопаток", 
+            "Высота сопловых лопаток, мм",
+            "Хорда сопловой решётки, мм",
             "Уточняем коэффициент расхода сопловой решетки", 
             "Количество лопаток в сопловой решетке",
             "Уточненый оптимальный относительный шаг"],
-        'Параметр': [r"$el_{1}, м$", r"$e_{opt}$",r"$l_{1}$, м", r"$\mu_{1}$", r"$z_{1}$", r"$t_{1}$"],
-    'Значение': [el1 ,e_opt, l1, mu1, z1, t_1]
+        'Параметр': [r"$el_{1}, м$", r"$e_{opt}$",r"$l_{1}$, м",r"$b_{1}$, м", r"$\mu_{1}$", r"$z_{1}$", r"$t_{1}$"],
+    'Значение': [el1 ,e_opt, l1, b1, mu1, z1, t_1]
     }
 
     ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c1, alpha_1 = atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow)
@@ -929,26 +931,27 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
               "Коэффициент концевых потерь", 
               "Коэффициент скорости сопловой решетки", 
               "Скорость выхода пара из сопловой решетки",
-              "Реальный угол выхода потока из сопловой решётки"],
-        'Параметр': [r"$\alpha_{уст}, град$", r"$\frac{b_{1}}{l_{1}}$, м",r"$\xi_{проф}$", r"$\xi_{сум}$",r"$\xi_{конц}$", r"$\phi$", r"$c_{1} \frac{м}{с}$", r"$\alpha_{1}, град$"],
+              "Угол выхода потока из сопловой решётки"],
+        'Параметр': [r"$\alpha_{уст}, град$", r"$\frac{b_{1}}{l_{1}}$",r"$\xi_{проф}$", r"$\xi_{сум}$",r"$\xi_{конц}$", r"$\phi$", r"$c_{1} \frac{м}{с}$", r"$\alpha_{1}, град$"],
     'Значение': [alpha_install ,round(b1_l1,3), ksi_p, ksi_s, ksi_k, phi_s, c1, alpha_1]
     }
     
     w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, _, _ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
-
+    name2, beta_2_e, beta_1_, t_otn, M2t_, b2, f2, I_2_min, W_2_min, alpha_install2 = grid_working_selection() 
     b = {
         'Показатель': ["Относительная скорость на выходе из сопловой решётки", 
               "Угол направления относительной скорости потока на выходе из сопловой решётки", 
               "Теоретическая относительная скорость на выходе из рабочей решётки", 
-              "Высота рабочих лопаток", 
+              "Высота рабочих лопаток",
+              "Хорда  решётки, мм",
               "Скорость звука за рабочей решеткой (теоретическая)", 
               "Теоретическое число Маха за рабочей решёткой", 
               "Потери в сопловой решетке"],
-        'Параметр': [r"$W_{1} \space \frac{м}{с}$", r"$\beta_{1}, град$", r"$w_{2t}, \space \frac{м}{с}$",r"$l_{2}, м$" ,r"$a_{2t}, \space \frac{м}{с}$", r"$M_{2t}$", r"$\Delta H_{c} \frac{кДж}{кг}$"],
-    'Значение': [w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc]
+        'Параметр': [r"$w_{1} \space \frac{м}{с}$", r"$\beta_{1}, град$", r"$w_{2t}, \space \frac{м}{с}$",r"$l_{2}, м$" ,r"$b_{2}, м$" ,r"$a_{2t}, \space \frac{м}{с}$", r"$M_{2t}$", r"$\Delta H_{c} \frac{кДж}{кг}$"],
+    'Значение': [w_1, beta_1, w2t, l2, b2, a2t, M2t, delta_Hc/1000,]
     }
 
-    name2, beta_2_e, beta_1_, t_otn, M2t_, b2, f2, I_2_min, W_2_min, alpha_install2 = grid_working_selection()   
+ 
     mu2, F2, beta2_e, z_2, t2opt, beta2_ust, b2_l2 = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
     с = {
         'Показатель':["Коэффициент расхода рабочей решётки", 
@@ -971,36 +974,48 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
               "Абсолютная скорость на выходе из рабочей решётки",
               "Угол выхода абсолютной скорости из рабочей решётки",
               "Действительная относительная скорость на выходе из рабочей решётки"],
-        'Параметр': [r"$\xi_{проф}$", r"$\xi_{сум}$",r"$\xi_{конц}$", r"$\phi$", r"$\beta_{2}, град$",r"$c_{2}, \space \frac{м}{с}$", r"$\alpha_{2}, град$", r"$w_{2}, \space \frac{м}{с}$" ],
+        'Параметр': [r"$\xi_{проф}$", r"$\xi_{сум}$",r"$\xi_{конц}$", r"$\psi$", r"$\beta_{2}, град$",r"$c_{2}, \space \frac{м}{с}$", r"$\alpha_{2}, град$", r"$w_{2}, \space \frac{м}{с}$" ],
     'Значение': [ksi_grid, ksi_sum_g, ksi_end_grid, psi, beta_2, c_2, alpha_2, w_2]
     }
+    delta_Hp, delta_Hvc, E0, eff, eff_, delta_eff, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
+    eff_oi, N_i = inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow)
 
+    ko = {
+        'Показатель': ["Потери в рабочей решетки", 
+              "Энергия выходной скорости  ", 
+              "Располагаемая энегрия ступени", 
+              "Внутренний относительный кпд ступени ", 
+              "Внутренния мощьность ступени"],
+        'Параметр': [ r"$\Delta H_{р} \frac{кДж}{кг}$", r"$\Delta H_{вс} \frac{кДж}{кг}$", r"$E_{0}\frac{кДж}{кг}$",  r"$\eta_{oi}$",r"$N_{oi}$, кВт" ],
+    'Значение': [round(delta_Hp/1000,2), round(delta_Hvc/1000,2), E0/1000, round(eff_oi,3), round(N_i/1000,1)]
+    }
 
     df = pd.DataFrame(data=d)
     df2 = grid_tab()
     df3 = pd.DataFrame(data=g)
     df4 = pd.DataFrame(data=a)
     df5 = pd.DataFrame(data=b)
-    df6 = grid_tab_work()
+    df6 = pd.DataFrame(data=ko)
     df7 = pd.DataFrame(data=с)
     df8 = pd.DataFrame(data=v)
 
     print('Предрасчет сопловой решетки')
     display(df)
-    print(f'Подходячий тип сопловой решетки {name}')
-    display(df2)
+    #print(f'Подходячий тип сопловой решетки {name}')
+    #display(df2)
     print('Расчет дополнительных параметров сопловой решетки')
     display(df3)
     print('Расчет параметров сопловой решетки из аталаса')
     display(df4)
     print('Предрасчет рабочей решетки')
     display(df5)
-    print(f'Подходячий тип рабочей решетки {name2}')
-    display(df6)
+    #print(f'Подходячий тип рабочей решетки {name2}')
     print('Расчет дополнительных параметров рабочей решетки')
     display(df7)
     print('Расчет параметров рабочей решетки из аталаса')
     display(df8)
+    print('')
+    display(df6)
     pass
 
 
@@ -1035,7 +1050,7 @@ def inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow):
     H_i = E0 - delta_Hc - delta_Hp - (1-x_vc) * delta_Hvc - delta_Hy - delta_Htr - delta_Hparc
     eff_oi = H_i / E0
     N_i = inlet_mass_flow * H_i
-    return ksi_tr,N_i
+    return eff_oi,N_i
 
 def plot_reg(point0, d_sr, n, p, H0, inlet_mass_flow):
     
@@ -1051,53 +1066,39 @@ def plot_reg(point0, d_sr, n, p, H0, inlet_mass_flow):
     plot_process(ax,[point_1_, point_2_],  color='black')
     plot_process(ax,[point0[0], point_1_t, point_t_konec], alpha=0.5, color='grey')
     plot_process(ax,[point_1_, point_2_t],  alpha=0.5, color='grey')
+    ax.set_title("HS-диаграмма процесса расширения в регулирующей ступени", fontsize=18)
     ax.grid()
 
-def outinlet():
-    v = {
-        'Показатель': ["Коэффициент профильных потерь в решётке", 
-              "Коэффициент суммарных потерь", 
-              "Коэффициент концевых потерь", 
-              "Коэффициент скорости рабочей решётки", 
-              "Угол направления относительной скорости на выходе из рабочей решётки", 
-              "Абсолютная скорость на выходе из рабочей решётки",
-              "Угол выхода абсолютной скорости из рабочей решётки",
-              "Действительная относительная скорость на выходе из рабочей решётки"],
-        
-        'Параметр': [r"$\xi_{проф}$", r"$\xi_{сум}$",r"$\xi_{конц}$", r"$\phi$", r"$\beta_{2}, град$",r"$c_{2}, \space \frac{м}{с}$", r"$\alpha_{2}, град$", r"$w_{2}, \space \frac{м}{с}$" ],
-        'Значение': [d, d,d ,d ,d ,d , d, d]
-        }
- 
-    df = pd.DataFrame(data=v)
-    print(df)
+def tab_point_reg(point0, d_sr, n, p, H0, inlet_mass_flow):
+    
+    _, _, _, _, _, _, _, _, _, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, _, _, point_2_t, point_1_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    _, _, _, _, _, _, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
 
-    pass 
-
-def determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p, H0):
-
-    ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c1, alpha_1 = atlas_params(point_0, d_sr, n, p, H0, inlet_mass_flow)
-    delta_Hp, delta_Hvc, E0, eff, eff_, delta_eff, point_2_, point_t_konec = calculation_blade_efficiency(point_0, d_sr, n, p, H0, inlet_mass_flow)
-    n_stages = 11
-    delta_p0 = 0.05 *  p0
-    real_p0 =  p0 - delta_p0
-    point_0t = gas(P =  p0 * unit, T=to_kelvin(t0))
-    point_0 = gas(P= real_p0 * unit, h=point_0t.h)
-    p0 = real_p0
-    h0 = point_0.h
-    pz = 3.34 * MPa 
+    df1 = pd.DataFrame([(point0[0].P, point_1_.P, point_2_.P, point_t_konec.P),
+                        (point0[0].T, point_1_.T, point_2_.T, point_t_konec.T),
+                        (point0[0].h, point_1_.h, point_2_.h, point_t_konec.h),
+                        (point0[0].s, point_1_.s, point_2_.s, point_t_konec.s)],
+                        index=["P, МПа", "T, K", r"h, $\frac{кДж}{кг}$", r"S, $\frac{кДж}{кг * K}$ "], 
+                        columns=["point 0", "point 1", "point 2", "point konec"])
+    return df1
 
 
+def determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1):
+    _, _, _, _, _, _, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
+
+    p0 = point_t_konec.P * MPa
+    h0 = point_t_konec.h 
+    pz = 3.66 * MPa
+    point_0 = gas(P= p0 * unit, h=h0)
     delta_diam = 0.2
     speed_coefficient = 0.93
     root_reaction_degree = 0.05
     discharge_coefficient = 0.96
+    alpha_1 = 14
     overlapping = 0.003
-    efficiency = eff
-
+    efficiency = internal_efficiency
     avg_diam_1 = d_sr - delta_diam
-
-    veernost_1 = 37
-
     def get_reaction_degree(root_dor, veernost):
         return root_dor + (1.8 / (veernost + 1.8))
 
@@ -1122,7 +1123,7 @@ def determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p
     blade_length_1 = upper / lower
     blade_length_2 = blade_length_1 + overlapping
 
-    assert np.isclose(avg_diam_1 / blade_length_1, veernost_1, rtol=0.01)
+    #assert np.isclose(avg_diam_1 / blade_length_1, veernost_1, rtol=0.01)
 
     root_diameter = avg_diam_1 - blade_length_2
 
@@ -1138,10 +1139,10 @@ def determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p
         return x ** 2 + x * root_diameter - avg_diam_1 * blade_length_2 * point_z.v / point_2.v
 
     blade_length_z = fsolve(equation_to_solve, 0.01)[0]
-    print(blade_length_z)
+    
 
     avg_diam_2 = root_diameter + blade_length_z
-    print(avg_diam_2)
+    
 
     def linear_distribution(left, right, x):
         return (right - left) * x + left
@@ -1162,12 +1163,20 @@ def determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p
     bias = full_heat_drop * (1 + reheat_factor) - np.sum(actual_heat_drops)
     bias = bias / n_stages
     new_actual_heat_drop = actual_heat_drops + bias
-    return new_actual_heat_drop 
+    return diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop 
 
-def plot_distribution(point_0,p0,t0,n,inlet_mass_flow,d_sr, p, H0):
-    new_actual_heat_drop = determination_of_the_number_of_steps(point_0,p0,t0,n,inlet_mass_flow,d_sr, p, H0)
+def plot_distribution(values, ax_name):
     fig, ax = plt.subplots(1, 1, figsize=(15,5))
-    ax.plot(range(1, 11), new_actual_heat_drop,  marker='o')
+    ax.plot(range(1, 12), values,  marker='o')
     ax.set_xlabel("Номер ступени")
-    ax.set_ylabel("Теплоперепады по ступеням")
+    ax.set_ylabel(ax_name)
     ax.grid()
+
+def plot_heat_drop(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1):
+    diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop  = determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1)
+    plot_distribution(diameters, "d, m")
+    plot_distribution(blade_lengths, "l, m")
+    plot_distribution(veernosts, "Веерность")
+    plot_distribution(reaction_degrees, "Степень реактивности")
+    plot_distribution(u_cf, "U/Cф")
+    plot_distribution(new_actual_heat_drop, "Теплоперепады по ступеням")
