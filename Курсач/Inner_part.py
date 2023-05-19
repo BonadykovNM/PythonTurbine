@@ -731,7 +731,7 @@ def grid_working_selection():
     beta_1_ = range(20, 30)
     t_otn = np.arange(0.60, 0.75, 0.01) 
     M2t_ = 0.95
-    b2 = 25.9
+    b2 = 26
     f2 = 2.44 # в см^2
     I_2_min = 0.43 # в см^4
     W_2_min = 0.39 # в см^3
@@ -795,7 +795,9 @@ def parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow):
     w_2 = w2t * psi
     beta_2 = math.degrees(math.asin((mu2 / psi) * math.sin(math.radians(beta2_e))))
     c_2 = math.sqrt(w_2 ** 2 + u ** 2 - 2 * w_2 * u * math.cos(math.radians(beta_2)))
-    alpha_2 = math.degrees(math.atan((math.sin(math.radians(beta_2)))/(math.cos(math.radians(beta_2)) - u/w_2)))
+    #alpha_2 = math.degrees(math.atan((math.sin(math.radians(beta_2)))/(math.cos(math.radians(beta_2)) - u/w_2)))
+    alpha_2 = math.degrees(math.asin((w_2*math.sin(math.radians(beta_2))) / c_2))
+
     return ksi_grid, ksi_sum_g, ksi_end_grid, psi, beta_2, c_2, alpha_2, w_2
 
 
@@ -978,17 +980,34 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     'Значение': [ksi_grid, ksi_sum_g, ksi_end_grid, psi, beta_2, c_2, alpha_2, w_2]
     }
     delta_Hp, delta_Hvc, E0, eff, eff_, delta_eff, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
-    eff_oi, N_i = inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow)
+    eff_oi, N_i, delta_Htr, delta_Hy, delta_Hparc = inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow)
 
     ko = {
         'Показатель': ["Потери в рабочей решетки", 
-              "Энергия выходной скорости  ", 
+              "Энергия выходной скорости", 
               "Располагаемая энегрия ступени", 
-              "Внутренний относительный кпд ступени ", 
+              "Внутренний относительный кпд ступени", 
               "Внутренния мощьность ступени"],
-        'Параметр': [ r"$\Delta H_{р} \frac{кДж}{кг}$", r"$\Delta H_{вс} \frac{кДж}{кг}$", r"$E_{0}\frac{кДж}{кг}$",  r"$\eta_{oi}$",r"$N_{oi}$, кВт" ],
+        'Параметр': [ r"$\Delta H_{р} \frac{кДж}{кг}$", r"$\Delta H_{vc} \frac{кДж}{кг}$", r"$E_{0}\frac{кДж}{кг}$",  r"$\eta_{oi}$",r"$N_{oi}$, кВт" ],
     'Значение': [round(delta_Hp/1000,2), round(delta_Hvc/1000,2), E0/1000, round(eff_oi,3), round(N_i/1000,1)]
     }
+
+
+    W2_min_, sigma_bending, omega, sigma_stretching = calculation_trength(point0, d_sr, n, p, H0, inlet_mass_flow)
+    x = {
+     'Показатель': ["Момент сопротивления профиля рабочей лопатки", 
+              "Напряжение изгиба лопатки", 
+              "угловая скорость рабочего колеса", 
+              "Напряжение растяжения лопатки"],       
+     'Параметр': [r"$W2_{min}$", r"$\sigma$", r"$\omega$", r"$\sigma$"],
+     'Значение': [W2_min_, sigma_bending, omega, sigma_stretching]
+        }
+
+
+
+    df10 = pd.DataFrame(data=x)
+
+
 
     df = pd.DataFrame(data=d)
     df2 = grid_tab()
@@ -998,6 +1017,7 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     df6 = pd.DataFrame(data=ko)
     df7 = pd.DataFrame(data=с)
     df8 = pd.DataFrame(data=v)
+    #df9 = pd.DataFrame(data=o)
 
     print('Предрасчет сопловой решетки')
     display(df)
@@ -1016,6 +1036,8 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     display(df8)
     print('')
     display(df6)
+    display(df10)
+
     pass
 
 
@@ -1050,20 +1072,25 @@ def inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow):
     H_i = E0 - delta_Hc - delta_Hp - (1-x_vc) * delta_Hvc - delta_Hy - delta_Htr - delta_Hparc
     eff_oi = H_i / E0
     N_i = inlet_mass_flow * H_i
-    return eff_oi,N_i
+    eff_oi,N_i, delta_Htr, delta_Hy
+    return eff_oi, N_i, delta_Htr, delta_Hy, delta_Hparc
 
 def plot_reg(point0, d_sr, n, p, H0, inlet_mass_flow):
-    
+    delta_Hp, delta_Hvc, _, _, _, _, _, _ = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, _, _, _, _, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, _, _, point_2_t, point_1_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, _, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
+    eff_oi,N_i, delta_Htr, delta_Hy, delta_Hparc = inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow)  
+    h_  = point_t_konec.h + delta_Hp/1000 + delta_Htr/1000 + delta_Hparc/1000 + delta_Hy/1000 + ((1 - 0) * delta_Hvc/1000)
+    point_d_ = gas(P = point_2_.P, h = h_)
     fig, ax = plt.subplots(1,1,figsize=(10,10))
     ax.set_xlim(6.22, 6.25)
     ax.set_ylim(3250, 3375)
     ax.grid()
-    plot_hs_diagram(ax = ax, points = [point0[0], point_1_t, point_1_, point_2_t, point_2_, point_t_konec])
+    plot_hs_diagram(ax = ax, points = [point0[0], point_1_t, point_1_, point_2_t, point_2_, point_t_konec, point_d_])
     plot_process(ax,[point0[0], point_1_], color='black')
     plot_process(ax,[point_1_, point_2_],  color='black')
+    plot_process(ax,[point_2_, point_d_],  color='black')
     plot_process(ax,[point0[0], point_1_t, point_t_konec], alpha=0.5, color='grey')
     plot_process(ax,[point_1_, point_2_t],  alpha=0.5, color='grey')
     ax.set_title("HS-диаграмма процесса расширения в регулирующей ступени", fontsize=18)
@@ -1123,10 +1150,9 @@ def determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow
     blade_length_1 = upper / lower
     blade_length_2 = blade_length_1 + overlapping
 
-    #assert np.isclose(avg_diam_1 / blade_length_1, veernost_1, rtol=0.01)
+    assert np.isclose(avg_diam_1 / blade_length_1, veernost_1, rtol=0.01)
 
     root_diameter = avg_diam_1 - blade_length_2
-
     point_zt = gas(P=pz * unit, s=point_0.s)
     full_heat_drop = h0 - point_zt.h
     actual_heat_drop = full_heat_drop * efficiency
@@ -1163,7 +1189,7 @@ def determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow
     bias = full_heat_drop * (1 + reheat_factor) - np.sum(actual_heat_drops)
     bias = bias / n_stages
     new_actual_heat_drop = actual_heat_drops + bias
-    return diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop 
+    return root_diameter,diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop, avg_diam_2, blade_length_z
 
 def plot_distribution(values, ax_name):
     fig, ax = plt.subplots(1, 1, figsize=(15,5))
@@ -1173,10 +1199,147 @@ def plot_distribution(values, ax_name):
     ax.grid()
 
 def plot_heat_drop(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1):
-    diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop  = determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1)
+    root_diameter,diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop, avg_diam_2,blade_length_z = determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1)
     plot_distribution(diameters, "d, m")
     plot_distribution(blade_lengths, "l, m")
     plot_distribution(veernosts, "Веерность")
     plot_distribution(reaction_degrees, "Степень реактивности")
     plot_distribution(u_cf, "U/Cф")
     plot_distribution(new_actual_heat_drop, "Теплоперепады по ступеням")
+
+def root_diameter_print(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1):
+    root_diameter,diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop, avg_diam_2,blade_length_z = determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1)
+    print ("Корневой диаметр = ",root_diameter,"м")
+
+def calculation_trength(point0, d_sr, n, p, H0, inlet_mass_flow):
+    u = speed_u (d_sr,n)
+    delta_Hp, delta_Hvc, E0, eff, eff_, delta_eff, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
+    mu2, F2, beta2_e, z_2, t2opt, beta2_ust, b2_l2 = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
+    el1, F1, alf1_e, e_opt, l1, mu1 ,z1 ,t_1 = correction_params(point0, d_sr, n, p, H0, inlet_mass_flow)
+    w_1, beta_1, w2t, l2, a2t, M2t, delta_Hc, point_2_t, point_1_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
+    name, beta_2_e, beta_1_, t_otn, M2t_, b2, f2, I_2_min, W_2_min, alpha_install = grid_working_selection()
+    b2_atl = 25.9
+    W2_min_ = W_2_min * math.pow(b2 / b2_atl, 3)
+    sigma_bending = (inlet_mass_flow * H0 * 1000 * eff * l2) / (2 * u * z_2 * W2_min_ * e_opt)
+    omega = 2 * math.pi * n
+    sigma_stretching = 0.5 * 7800 * math.pow(omega, 2) * d_sr * l2
+    return W2_min_, sigma_bending, omega, sigma_stretching
+
+
+def vibra(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1):
+    name, beta_2_e, beta_1_, t_otn, M2t_, b2, f2, I_2_min, W_2_min, alpha_install = grid_working_selection()
+    root_diameter,diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop, avg_diam_2,blade_length_z = determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1)
+    mu2, F2, beta2_e, z_2, t2opt, beta2_ust, b2_l2 = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
+    mm = 1e-3
+    m = 12
+    t = 25 * mm
+    beta = 85
+    density = 7800
+    E = 2 * (10**11)
+    z = z_2
+    d = avg_diam_2
+    l = blade_length_z
+    f = f2 * (10 ** (-4))
+    J = I_2_min * (10 ** (-8))
+    delta = 5 * mm
+    B = 40 * mm
+
+    i = (J / f) ** 0.5
+    _lambda = l / i
+    psi = 0.9
+
+    def static_frequency(i):
+        _m = {
+                1: 0.56,
+                2: 3.51,
+                3: 9.82 
+            }
+        first = psi * _m[i] / (l ** 2)
+        second = ((E * J) / (density * f)) ** 0.5
+        return first * second
+
+    f_a0 = static_frequency(1) * 0.8
+    f_a1 = static_frequency(1) * 6
+    f_b0 = static_frequency(1) * 4.2
+
+    H = 0.12
+    J_b = B * (delta ** 3) / 12
+    k = (12 * (m - 1) * H * E * J_b * l * np.sin(np.deg2rad(beta)) ** 2) / (m * t * J * E)
+    nu = B * delta * t / (f * l)
+    print(f_a0,"Гц", f_a1,"Гц", f_b0,"Гц") 
+    B_bandage = 0.5 * ((d/l) - 1) * ((nu+1/2)/(nu+1/3)) + np.sin(np.deg2rad(beta)) ** 2
+
+    def to_dynamic_frequency(f, n=50):
+        root = (1 + B_bandage * (n / f) ** 2) ** 0.5
+        return f * root
+
+    print(to_dynamic_frequency(f_a0), to_dynamic_frequency(f_a1), to_dynamic_frequency(f_b0))
+    def min_max(f, delta=0.05):
+        return f * (1-delta) , f * (1 + delta)
+
+    n_line = np.linspace(0, 60)
+    min_line, max_line = min_max(to_dynamic_frequency(f_a0, n=n_line))
+
+    def k_line(k, n=n_line):
+        return k * n_line
+    fig, ax = plt.subplots(1,1,figsize=(15,10))
+    ax.plot(n_line, to_dynamic_frequency(f_a0, n=n_line), label='$f_{a0}$')
+    ax.fill_between(n_line, y1=min_line, y2=max_line, alpha=0.5)
+
+    ax.plot(n_line, k_line(8), label=f'k={8}')
+    ax.plot(n_line, k_line(9), label=f'k={9}')
+    ax.plot(n_line, k_line(10), label=f'k={10}')
+    ax.plot(n_line, k_line(11), label=f'k={11}')
+    ax.plot(n_line, k_line(12), label=f'k={12}')
+    ax.plot(n_line, k_line(13), label=f'k={13}')
+    ax.set_xlabel("n, rps")
+    ax.set_xlabel("f, Hz")
+    ax.grid()
+    ax.legend()
+    ax.set_title("Вибрационная диаграмма");  
+
+
+def dstrength(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1):
+    root_diameter,diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop, avg_diam_2,blade_length_z = determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1)
+
+    MPa = 1e6
+    kW = 1e3
+    MW = 1e6
+    nu = 0.3
+    r1 = 0 
+    r2 = root_diameter / 2 
+
+    sigma_1 = 0
+    sigma_2 = 100 * MPa
+    density = 7800
+
+    angular_speed = 2 * np.pi * n
+
+    max_stress = 510 * MPa
+
+    def sigma_r(r, r2, sigma_2):
+        a = (3 + nu) / 8
+        return a * density * (angular_speed ** 2) * (r2**2 - r**2) + sigma_2
+
+    def sigma_theta(r, r2, sigma_2):
+        a = (3 + nu) / 8
+        b = (1 + 3 * nu) / (3 + nu)
+        return a * density * (angular_speed ** 2) * (r2**2 - b * r**2) + sigma_2
+
+    sigma_r(0, r2=r2, sigma_2=sigma_2) / MPa, sigma_r(r2, r2=r2, sigma_2=sigma_2) / MPa
+    sigma_theta(0, r2=r2, sigma_2=sigma_2) / MPa, sigma_theta(r2, r2=r2, sigma_2=sigma_2) / MPa
+
+    print("Коэффициент запаса прочности: ", max_stress/sigma_theta(0, r2=r2, sigma_2=sigma_2))
+
+
+
+
+
+
+
+
+
+
+
+
+
