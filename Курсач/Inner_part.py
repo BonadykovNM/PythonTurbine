@@ -702,7 +702,6 @@ def atlas_params(point0, d_sr, n, p, H0, inlet_mass_flow):
     alpha_1 = math.degrees(math.asin((mu1 / phi_s) * math.sin(math.radians(alf1_e))))
     return ksi_p, ksi_s, ksi_k, phi_s, b1_l1, c1, alpha_1
 
-
 def calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow):
     u = speed_u (d_sr,n)
     _, H0_p, _, _, _, c1t, _, _, _, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
@@ -982,31 +981,6 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     delta_Hp, delta_Hvc, E0, eff, eff_, delta_eff, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
     eff_oi, N_i, delta_Htr, delta_Hy, delta_Hparc = inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow)
 
-    ko = {
-        'Показатель': ["Потери в рабочей решетки", 
-              "Энергия выходной скорости", 
-              "Располагаемая энегрия ступени", 
-              "Внутренний относительный кпд ступени", 
-              "Внутренния мощьность ступени"],
-        'Параметр': [ r"$\Delta H_{р} \frac{кДж}{кг}$", r"$\Delta H_{vc} \frac{кДж}{кг}$", r"$E_{0}\frac{кДж}{кг}$",  r"$\eta_{oi}$",r"$N_{oi}$, кВт" ],
-    'Значение': [round(delta_Hp/1000,2), round(delta_Hvc/1000,2), E0/1000, round(eff_oi,3), round(N_i/1000,1)]
-    }
-
-
-    W2_min_, sigma_bending, omega, sigma_stretching = calculation_trength(point0, d_sr, n, p, H0, inlet_mass_flow)
-    x = {
-     'Показатель': ["Момент сопротивления профиля рабочей лопатки", 
-              "Напряжение изгиба лопатки", 
-              "угловая скорость рабочего колеса", 
-              "Напряжение растяжения лопатки"],       
-     'Параметр': [r"$W2_{min}$", r"$\sigma$", r"$\omega$", r"$\sigma$"],
-     'Значение': [W2_min_, sigma_bending, omega, sigma_stretching]
-        }
-
-
-
-    df10 = pd.DataFrame(data=x)
-
 
 
     df = pd.DataFrame(data=d)
@@ -1014,7 +988,6 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     df3 = pd.DataFrame(data=g)
     df4 = pd.DataFrame(data=a)
     df5 = pd.DataFrame(data=b)
-    df6 = pd.DataFrame(data=ko)
     df7 = pd.DataFrame(data=с)
     df8 = pd.DataFrame(data=v)
     #df9 = pd.DataFrame(data=o)
@@ -1035,8 +1008,7 @@ def data_output(point0, d_sr, n, p, H0, inlet_mass_flow):
     print('Расчет параметров рабочей решетки из аталаса')
     display(df8)
     print('')
-    display(df6)
-    display(df10)
+
 
     pass
 
@@ -1097,15 +1069,17 @@ def plot_reg(point0, d_sr, n, p, H0, inlet_mass_flow):
     ax.grid()
 
 def tab_point_reg(point0, d_sr, n, p, H0, inlet_mass_flow):
-    
+    delta_Hp, delta_Hvc, _, _, _, _, _, _ = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, _, _, _, _, point_1_t = calculation_nozzle_params(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, _, _, point_2_t, point_1_ = calculation_working_grid(point0, d_sr, n, p, H0, inlet_mass_flow)
     _, _, _, _, _, _, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
-
-    df1 = pd.DataFrame([(point0[0].P, point_1_.P, point_2_.P, point_t_konec.P),
-                        (point0[0].T, point_1_.T, point_2_.T, point_t_konec.T),
-                        (point0[0].h, point_1_.h, point_2_.h, point_t_konec.h),
-                        (point0[0].s, point_1_.s, point_2_.s, point_t_konec.s)],
+    eff_oi,N_i, delta_Htr, delta_Hy, delta_Hparc = inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow)  
+    h_  = point_t_konec.h + delta_Hp/1000 + delta_Htr/1000 + delta_Hparc/1000 + delta_Hy/1000 + ((1 - 0) * delta_Hvc/1000)
+    point_d_ = gas(P = point_2_.P, h = h_)
+    df1 = pd.DataFrame([(point0[0].P, point_1_.P, point_2_.P, point_d_.P),
+                        (point0[0].T, point_1_.T, point_2_.T, point_d_.T),
+                        (point0[0].h, point_1_.h, point_2_.h, point_d_.h),
+                        (point0[0].s, point_1_.s, point_2_.s, point_d_.s)],
                         index=["P, МПа", "T, K", r"h, $\frac{кДж}{кг}$", r"S, $\frac{кДж}{кг * K}$ "], 
                         columns=["point 0", "point 1", "point 2", "point konec"])
     return df1
@@ -1116,7 +1090,7 @@ def determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow
 
     p0 = point_t_konec.P * MPa
     h0 = point_t_konec.h 
-    pz = 3.66 * MPa
+    pz = 3.74 * MPa
     point_0 = gas(P= p0 * unit, h=h0)
     delta_diam = 0.2
     speed_coefficient = 0.93
@@ -1230,10 +1204,11 @@ def vibra(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,
     name, beta_2_e, beta_1_, t_otn, M2t_, b2, f2, I_2_min, W_2_min, alpha_install = grid_working_selection()
     root_diameter,diameters, blade_lengths, veernosts, reaction_degrees, u_cf, new_actual_heat_drop, avg_diam_2,blade_length_z = determination_of_the_number_of_steps(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,veernost_1)
     mu2, F2, beta2_e, z_2, t2opt, beta2_ust, b2_l2 = specification_working_grid_parameters(point0, d_sr, n, p, H0, inlet_mass_flow)
+    B_2 = b2 * 10**-3 * math.sin(math.radians(beta2_ust))
     mm = 1e-3
-    m = 12
+    m = n_stages
     t = 25 * mm
-    beta = 85
+    beta = beta2_ust
     density = 7800
     E = 2 * (10**11)
     z = z_2
@@ -1242,8 +1217,7 @@ def vibra(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,
     f = f2 * (10 ** (-4))
     J = I_2_min * (10 ** (-8))
     delta = 5 * mm
-    B = 40 * mm
-
+    B = B_2
     i = (J / f) ** 0.5
     _lambda = l / i
     psi = 0.9
@@ -1266,7 +1240,7 @@ def vibra(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_stages,
     J_b = B * (delta ** 3) / 12
     k = (12 * (m - 1) * H * E * J_b * l * np.sin(np.deg2rad(beta)) ** 2) / (m * t * J * E)
     nu = B * delta * t / (f * l)
-    print(f_a0,"Гц", f_a1,"Гц", f_b0,"Гц") 
+
     B_bandage = 0.5 * ((d/l) - 1) * ((nu+1/2)/(nu+1/3)) + np.sin(np.deg2rad(beta)) ** 2
 
     def to_dynamic_frequency(f, n=50):
@@ -1331,12 +1305,83 @@ def dstrength(point0, d_sr, n, p, H0, inlet_mass_flow, internal_efficiency,n_sta
 
     print("Коэффициент запаса прочности: ", max_stress/sigma_theta(0, r2=r2, sigma_2=sigma_2))
 
+def kritic_rot_speed():
+  E = 1.8 * 10**11
+  density = 7800
+
+  L = 4
+  L_rotor = 4.4
+  d = 0.56
+  d_0 = 0.1
+
+  rotor_mass = 11941
+
+  EI = E * np.pi * (d ** 4 - d_0 ** 4) / 64
+  print('Средняя изгибная жесткость ротора', EI)
+
+  P_11 = (np.pi ** 2 / L ** 2) * (EI / (rotor_mass / L_rotor)) ** 0.5
+  print('Первая собственная частота вращения ротора по первому тону колебаний на абсолютно жестких опорах', P_11, 'rad/s')
+  #print(P_11, "rad/s")  # rad / s 
+
+  P_12 = 4 * P_11
+  print('Первая собственная частота вращения ротора по второму тону колебаний на абсолютно жестких опорах', P_12, 'rad/s')
+  #print(P_12, "rad/s")
+  #P_12  # rad / s 
+
+  delta_op = 0.5 * 10 ** -9
+  C_horizontal = 0.5 * 10 ** 9
+  delta_opor = delta_op + 1 / C_horizontal
+  delta_opor
+
+  P_21 = (2 / (rotor_mass * delta_opor)) ** 0.5
+  print('2-e собственные частоты вращения ротора на упругих опорах', P_21, 'rad/s')
+  #print(P_21, "rad/s")
+  #P_21  # rad / s
+
+  P_22 = (L / L_rotor) * 3 ** 0.5 * P_21
+  print('2-e собственные частоты вращения ротора на упругих опорах', P_22, 'rad/s')
+  #print(P_22, "rad/s")  # rad / s
+
+  P_1 = 1 / ((1 / P_11 ** 2) + (1 / P_21 ** 2) ) ** 0.5
+  print("Первая критическая частота вращения ротора",P_1,'rad/s', P_1 / (2 * np.pi), "Гц") 
+  #P_1 / (2 * np.pi)  # Hz
+  P_2 = 1 / ((1 / P_12 ** 2) + (1 / P_22 ** 2) ) ** 0.5
+  print("Вторая критическая частота вращения ротора",P_2,'rad/s', P_2 / (2 * np.pi), "Гц")
+
+
+def data_output1(point0, d_sr, n, p, H0, inlet_mass_flow):
+    delta_Hp, delta_Hvc, E0, eff, eff_, delta_eff, point_2_, point_t_konec = calculation_blade_efficiency(point0, d_sr, n, p, H0, inlet_mass_flow)
+    eff_oi, N_i, delta_Htr, delta_Hy, delta_Hparc = inside_kpd(point0, d_sr, n, p, H0, inlet_mass_flow)
+    ko = {
+        'Показатель': ["Потери в рабочей решетки", 
+              "Энергия выходной скорости", 
+              "Располагаемая энегрия ступени",
+              "Относительный лопаточный КПД",
+              "Внутренний относительный кпд ступени", 
+              "Внутренния мощьность ступени"],
+        'Параметр': [ r"$\Delta H_{р} \frac{кДж}{кг}$", r"$\Delta H_{vc} \frac{кДж}{кг}$", r"$E_{0}\frac{кДж}{кг}$",  r"$\eta_{oi}$", r"$\eta_{о.д}$" ,r"$N_{oi}$, кВт" ],
+    'Значение': [round(delta_Hp/1000,2), round(delta_Hvc/1000,2), E0/1000, round(eff_oi,3),round(eff,3), round(N_i/1000,1)]
+    }
+
+    df = pd.DataFrame(data=ko)
+    display(df)
+
+
+def data_output3(point0, d_sr, n, p, H0, inlet_mass_flow):
+    W2_min_, sigma_bending, omega, sigma_stretching = calculation_trength(point0, d_sr, n, p, H0, inlet_mass_flow)
+    x = {
+     'Показатель': ["Момент сопротивления профиля рабочей лопатки", 
+              "Напряжение изгиба лопатки", 
+              "угловая скорость рабочего колеса", 
+              "Напряжение растяжения лопатки"],       
+     'Параметр': [r"$W2_{min}$", r"$\sigma$", r"$\omega$", r"$\sigma$"],
+     'Значение': [W2_min_, sigma_bending, omega, sigma_stretching]
+        }
 
 
 
-
-
-
+    df10 = pd.DataFrame(data=x)
+    display(df10)
 
 
 
