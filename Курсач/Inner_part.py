@@ -730,7 +730,8 @@ def grid_working_selection():
     beta_1_ = range(20, 30)
     t_otn = np.arange(0.60, 0.75, 0.01) 
     M2t_ = 0.95
-    b2 = 26
+    b2 = 45
+
     f2 = 2.44 # в см^2
     I_2_min = 0.43 # в см^4
     W_2_min = 0.39 # в см^3
@@ -795,7 +796,7 @@ def parameters_working_atlas(point0, d_sr, n, p, H0, inlet_mass_flow):
     beta_2 = math.degrees(math.asin((mu2 / psi) * math.sin(math.radians(beta2_e))))
     c_2 = math.sqrt(w_2 ** 2 + u ** 2 - 2 * w_2 * u * math.cos(math.radians(beta_2)))
     #alpha_2 = math.degrees(math.atan((math.sin(math.radians(beta_2)))/(math.cos(math.radians(beta_2)) - u/w_2)))
-    alpha_2 = math.degrees(math.asin((w_2*math.sin(math.radians(beta_2))) / c_2))
+    alpha_2 = 180 - math.degrees(math.asin((w_2*math.sin(math.radians(beta_2))) / c_2))
 
     return ksi_grid, ksi_sum_g, ksi_end_grid, psi, beta_2, c_2, alpha_2, w_2
 
@@ -1356,9 +1357,9 @@ def data_output1(point0, d_sr, n, p, H0, inlet_mass_flow):
         'Показатель': ["Потери в рабочей решетки", 
               "Энергия выходной скорости", 
               "Располагаемая энегрия ступени",
+              "Внутренний относительный кпд ступени",
               "Относительный лопаточный КПД",
-              "Внутренний относительный кпд ступени", 
-              "Внутренния мощьность ступени"],
+              "Внутренния мощность ступени"],
         'Параметр': [ r"$\Delta H_{р} \frac{кДж}{кг}$", r"$\Delta H_{vc} \frac{кДж}{кг}$", r"$E_{0}\frac{кДж}{кг}$",  r"$\eta_{oi}$", r"$\eta_{о.д}$" ,r"$N_{oi}$, кВт" ],
     'Значение': [round(delta_Hp/1000,2), round(delta_Hvc/1000,2), E0/1000, round(eff_oi,3),round(eff,3), round(N_i/1000,1)]
     }
@@ -1377,8 +1378,6 @@ def data_output3(point0, d_sr, n, p, H0, inlet_mass_flow):
      'Параметр': [r"$W2_{min}$", r"$\sigma$", r"$\omega$", r"$\sigma$"],
      'Значение': [W2_min_, sigma_bending, omega, sigma_stretching]
         }
-
-
 
     df10 = pd.DataFrame(data=x)
     display(df10)
